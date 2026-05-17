@@ -9,61 +9,321 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
+import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
+import { Route as AuthenticatedRelatoriosIndexRouteImport } from './routes/_authenticated/relatorios/index'
+import { Route as AuthenticatedFinanceiroIndexRouteImport } from './routes/_authenticated/financeiro/index'
+import { Route as AuthenticatedEstoqueIndexRouteImport } from './routes/_authenticated/estoque/index'
+import { Route as AuthenticatedConfiguracoesIndexRouteImport } from './routes/_authenticated/configuracoes/index'
+import { Route as AuthenticatedColaboradoresIndexRouteImport } from './routes/_authenticated/colaboradores/index'
+import { Route as AuthenticatedFinanceiroMargemRouteImport } from './routes/_authenticated/financeiro/margem'
+import { Route as AuthenticatedFinanceiroDreRouteImport } from './routes/_authenticated/financeiro/dre'
+import { Route as AuthenticatedFinanceiroDespesasRouteImport } from './routes/_authenticated/financeiro/despesas'
+import { Route as AuthenticatedEstoqueNovoRouteImport } from './routes/_authenticated/estoque/novo'
+import { Route as AuthenticatedEstoqueIdRouteImport } from './routes/_authenticated/estoque/$id'
 
-const IndexRoute = IndexRouteImport.update({
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedRoute = AuthenticatedRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedRelatoriosIndexRoute =
+  AuthenticatedRelatoriosIndexRouteImport.update({
+    id: '/relatorios/',
+    path: '/relatorios/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedFinanceiroIndexRoute =
+  AuthenticatedFinanceiroIndexRouteImport.update({
+    id: '/financeiro/',
+    path: '/financeiro/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedEstoqueIndexRoute =
+  AuthenticatedEstoqueIndexRouteImport.update({
+    id: '/estoque/',
+    path: '/estoque/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedConfiguracoesIndexRoute =
+  AuthenticatedConfiguracoesIndexRouteImport.update({
+    id: '/configuracoes/',
+    path: '/configuracoes/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedColaboradoresIndexRoute =
+  AuthenticatedColaboradoresIndexRouteImport.update({
+    id: '/colaboradores/',
+    path: '/colaboradores/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedFinanceiroMargemRoute =
+  AuthenticatedFinanceiroMargemRouteImport.update({
+    id: '/financeiro/margem',
+    path: '/financeiro/margem',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedFinanceiroDreRoute =
+  AuthenticatedFinanceiroDreRouteImport.update({
+    id: '/financeiro/dre',
+    path: '/financeiro/dre',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedFinanceiroDespesasRoute =
+  AuthenticatedFinanceiroDespesasRouteImport.update({
+    id: '/financeiro/despesas',
+    path: '/financeiro/despesas',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedEstoqueNovoRoute =
+  AuthenticatedEstoqueNovoRouteImport.update({
+    id: '/estoque/novo',
+    path: '/estoque/novo',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedEstoqueIdRoute = AuthenticatedEstoqueIdRouteImport.update({
+  id: '/estoque/$id',
+  path: '/estoque/$id',
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
+  '/': typeof AuthenticatedIndexRoute
+  '/login': typeof LoginRoute
+  '/estoque/$id': typeof AuthenticatedEstoqueIdRoute
+  '/estoque/novo': typeof AuthenticatedEstoqueNovoRoute
+  '/financeiro/despesas': typeof AuthenticatedFinanceiroDespesasRoute
+  '/financeiro/dre': typeof AuthenticatedFinanceiroDreRoute
+  '/financeiro/margem': typeof AuthenticatedFinanceiroMargemRoute
+  '/colaboradores/': typeof AuthenticatedColaboradoresIndexRoute
+  '/configuracoes/': typeof AuthenticatedConfiguracoesIndexRoute
+  '/estoque/': typeof AuthenticatedEstoqueIndexRoute
+  '/financeiro/': typeof AuthenticatedFinanceiroIndexRoute
+  '/relatorios/': typeof AuthenticatedRelatoriosIndexRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
+  '/login': typeof LoginRoute
+  '/': typeof AuthenticatedIndexRoute
+  '/estoque/$id': typeof AuthenticatedEstoqueIdRoute
+  '/estoque/novo': typeof AuthenticatedEstoqueNovoRoute
+  '/financeiro/despesas': typeof AuthenticatedFinanceiroDespesasRoute
+  '/financeiro/dre': typeof AuthenticatedFinanceiroDreRoute
+  '/financeiro/margem': typeof AuthenticatedFinanceiroMargemRoute
+  '/colaboradores': typeof AuthenticatedColaboradoresIndexRoute
+  '/configuracoes': typeof AuthenticatedConfiguracoesIndexRoute
+  '/estoque': typeof AuthenticatedEstoqueIndexRoute
+  '/financeiro': typeof AuthenticatedFinanceiroIndexRoute
+  '/relatorios': typeof AuthenticatedRelatoriosIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
+  '/_authenticated': typeof AuthenticatedRouteWithChildren
+  '/login': typeof LoginRoute
+  '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/_authenticated/estoque/$id': typeof AuthenticatedEstoqueIdRoute
+  '/_authenticated/estoque/novo': typeof AuthenticatedEstoqueNovoRoute
+  '/_authenticated/financeiro/despesas': typeof AuthenticatedFinanceiroDespesasRoute
+  '/_authenticated/financeiro/dre': typeof AuthenticatedFinanceiroDreRoute
+  '/_authenticated/financeiro/margem': typeof AuthenticatedFinanceiroMargemRoute
+  '/_authenticated/colaboradores/': typeof AuthenticatedColaboradoresIndexRoute
+  '/_authenticated/configuracoes/': typeof AuthenticatedConfiguracoesIndexRoute
+  '/_authenticated/estoque/': typeof AuthenticatedEstoqueIndexRoute
+  '/_authenticated/financeiro/': typeof AuthenticatedFinanceiroIndexRoute
+  '/_authenticated/relatorios/': typeof AuthenticatedRelatoriosIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/login'
+    | '/estoque/$id'
+    | '/estoque/novo'
+    | '/financeiro/despesas'
+    | '/financeiro/dre'
+    | '/financeiro/margem'
+    | '/colaboradores/'
+    | '/configuracoes/'
+    | '/estoque/'
+    | '/financeiro/'
+    | '/relatorios/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/login'
+    | '/'
+    | '/estoque/$id'
+    | '/estoque/novo'
+    | '/financeiro/despesas'
+    | '/financeiro/dre'
+    | '/financeiro/margem'
+    | '/colaboradores'
+    | '/configuracoes'
+    | '/estoque'
+    | '/financeiro'
+    | '/relatorios'
+  id:
+    | '__root__'
+    | '/_authenticated'
+    | '/login'
+    | '/_authenticated/'
+    | '/_authenticated/estoque/$id'
+    | '/_authenticated/estoque/novo'
+    | '/_authenticated/financeiro/despesas'
+    | '/_authenticated/financeiro/dre'
+    | '/_authenticated/financeiro/margem'
+    | '/_authenticated/colaboradores/'
+    | '/_authenticated/configuracoes/'
+    | '/_authenticated/estoque/'
+    | '/_authenticated/financeiro/'
+    | '/_authenticated/relatorios/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
+  AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
+  LoginRoute: typeof LoginRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/': {
+      id: '/_authenticated/'
       path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthenticatedIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/relatorios/': {
+      id: '/_authenticated/relatorios/'
+      path: '/relatorios'
+      fullPath: '/relatorios/'
+      preLoaderRoute: typeof AuthenticatedRelatoriosIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/financeiro/': {
+      id: '/_authenticated/financeiro/'
+      path: '/financeiro'
+      fullPath: '/financeiro/'
+      preLoaderRoute: typeof AuthenticatedFinanceiroIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/estoque/': {
+      id: '/_authenticated/estoque/'
+      path: '/estoque'
+      fullPath: '/estoque/'
+      preLoaderRoute: typeof AuthenticatedEstoqueIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/configuracoes/': {
+      id: '/_authenticated/configuracoes/'
+      path: '/configuracoes'
+      fullPath: '/configuracoes/'
+      preLoaderRoute: typeof AuthenticatedConfiguracoesIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/colaboradores/': {
+      id: '/_authenticated/colaboradores/'
+      path: '/colaboradores'
+      fullPath: '/colaboradores/'
+      preLoaderRoute: typeof AuthenticatedColaboradoresIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/financeiro/margem': {
+      id: '/_authenticated/financeiro/margem'
+      path: '/financeiro/margem'
+      fullPath: '/financeiro/margem'
+      preLoaderRoute: typeof AuthenticatedFinanceiroMargemRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/financeiro/dre': {
+      id: '/_authenticated/financeiro/dre'
+      path: '/financeiro/dre'
+      fullPath: '/financeiro/dre'
+      preLoaderRoute: typeof AuthenticatedFinanceiroDreRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/financeiro/despesas': {
+      id: '/_authenticated/financeiro/despesas'
+      path: '/financeiro/despesas'
+      fullPath: '/financeiro/despesas'
+      preLoaderRoute: typeof AuthenticatedFinanceiroDespesasRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/estoque/novo': {
+      id: '/_authenticated/estoque/novo'
+      path: '/estoque/novo'
+      fullPath: '/estoque/novo'
+      preLoaderRoute: typeof AuthenticatedEstoqueNovoRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/estoque/$id': {
+      id: '/_authenticated/estoque/$id'
+      path: '/estoque/$id'
+      fullPath: '/estoque/$id'
+      preLoaderRoute: typeof AuthenticatedEstoqueIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
   }
 }
 
+interface AuthenticatedRouteChildren {
+  AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+  AuthenticatedEstoqueIdRoute: typeof AuthenticatedEstoqueIdRoute
+  AuthenticatedEstoqueNovoRoute: typeof AuthenticatedEstoqueNovoRoute
+  AuthenticatedFinanceiroDespesasRoute: typeof AuthenticatedFinanceiroDespesasRoute
+  AuthenticatedFinanceiroDreRoute: typeof AuthenticatedFinanceiroDreRoute
+  AuthenticatedFinanceiroMargemRoute: typeof AuthenticatedFinanceiroMargemRoute
+  AuthenticatedColaboradoresIndexRoute: typeof AuthenticatedColaboradoresIndexRoute
+  AuthenticatedConfiguracoesIndexRoute: typeof AuthenticatedConfiguracoesIndexRoute
+  AuthenticatedEstoqueIndexRoute: typeof AuthenticatedEstoqueIndexRoute
+  AuthenticatedFinanceiroIndexRoute: typeof AuthenticatedFinanceiroIndexRoute
+  AuthenticatedRelatoriosIndexRoute: typeof AuthenticatedRelatoriosIndexRoute
+}
+
+const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
+  AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+  AuthenticatedEstoqueIdRoute: AuthenticatedEstoqueIdRoute,
+  AuthenticatedEstoqueNovoRoute: AuthenticatedEstoqueNovoRoute,
+  AuthenticatedFinanceiroDespesasRoute: AuthenticatedFinanceiroDespesasRoute,
+  AuthenticatedFinanceiroDreRoute: AuthenticatedFinanceiroDreRoute,
+  AuthenticatedFinanceiroMargemRoute: AuthenticatedFinanceiroMargemRoute,
+  AuthenticatedColaboradoresIndexRoute: AuthenticatedColaboradoresIndexRoute,
+  AuthenticatedConfiguracoesIndexRoute: AuthenticatedConfiguracoesIndexRoute,
+  AuthenticatedEstoqueIndexRoute: AuthenticatedEstoqueIndexRoute,
+  AuthenticatedFinanceiroIndexRoute: AuthenticatedFinanceiroIndexRoute,
+  AuthenticatedRelatoriosIndexRoute: AuthenticatedRelatoriosIndexRoute,
+}
+
+const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
+  AuthenticatedRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
+  AuthenticatedRoute: AuthenticatedRouteWithChildren,
+  LoginRoute: LoginRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

@@ -9,6 +9,9 @@ import {
 } from "@tanstack/react-router";
 
 import appCss from "../styles.css?url";
+import { AuthProvider } from "@/lib/auth";
+import { ThemeProvider } from "@/lib/theme";
+import { Toaster } from "@/components/ui/sonner";
 
 function NotFoundComponent() {
   return (
@@ -86,6 +89,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         rel: "stylesheet",
         href: appCss,
       },
+      { rel: "preconnect", href: "https://fonts.googleapis.com" },
+      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
+      {
+        rel: "stylesheet",
+        href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=DM+Sans:wght@500;600;700&display=swap",
+      },
     ],
   }),
   shellComponent: RootShell,
@@ -113,7 +122,12 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <Outlet />
+      <ThemeProvider>
+        <AuthProvider>
+          <Outlet />
+          <Toaster richColors position="top-right" />
+        </AuthProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }
