@@ -12,7 +12,9 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
+import { Route as AuthenticatedFinanceiroIndexRouteImport } from './routes/_authenticated/financeiro/index'
 import { Route as AuthenticatedEstoqueIndexRouteImport } from './routes/_authenticated/estoque/index'
+import { Route as AuthenticatedFinanceiroDespesasRouteImport } from './routes/_authenticated/financeiro/despesas'
 import { Route as AuthenticatedEstoqueNovoRouteImport } from './routes/_authenticated/estoque/novo'
 import { Route as AuthenticatedEstoqueIdRouteImport } from './routes/_authenticated/estoque/$id'
 
@@ -30,10 +32,22 @@ const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedFinanceiroIndexRoute =
+  AuthenticatedFinanceiroIndexRouteImport.update({
+    id: '/financeiro/',
+    path: '/financeiro/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedEstoqueIndexRoute =
   AuthenticatedEstoqueIndexRouteImport.update({
     id: '/estoque/',
     path: '/estoque/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedFinanceiroDespesasRoute =
+  AuthenticatedFinanceiroDespesasRouteImport.update({
+    id: '/financeiro/despesas',
+    path: '/financeiro/despesas',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedEstoqueNovoRoute =
@@ -53,14 +67,18 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/estoque/$id': typeof AuthenticatedEstoqueIdRoute
   '/estoque/novo': typeof AuthenticatedEstoqueNovoRoute
+  '/financeiro/despesas': typeof AuthenticatedFinanceiroDespesasRoute
   '/estoque/': typeof AuthenticatedEstoqueIndexRoute
+  '/financeiro/': typeof AuthenticatedFinanceiroIndexRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/': typeof AuthenticatedIndexRoute
   '/estoque/$id': typeof AuthenticatedEstoqueIdRoute
   '/estoque/novo': typeof AuthenticatedEstoqueNovoRoute
+  '/financeiro/despesas': typeof AuthenticatedFinanceiroDespesasRoute
   '/estoque': typeof AuthenticatedEstoqueIndexRoute
+  '/financeiro': typeof AuthenticatedFinanceiroIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -69,13 +87,29 @@ export interface FileRoutesById {
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/estoque/$id': typeof AuthenticatedEstoqueIdRoute
   '/_authenticated/estoque/novo': typeof AuthenticatedEstoqueNovoRoute
+  '/_authenticated/financeiro/despesas': typeof AuthenticatedFinanceiroDespesasRoute
   '/_authenticated/estoque/': typeof AuthenticatedEstoqueIndexRoute
+  '/_authenticated/financeiro/': typeof AuthenticatedFinanceiroIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/estoque/$id' | '/estoque/novo' | '/estoque/'
+  fullPaths:
+    | '/'
+    | '/login'
+    | '/estoque/$id'
+    | '/estoque/novo'
+    | '/financeiro/despesas'
+    | '/estoque/'
+    | '/financeiro/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/login' | '/' | '/estoque/$id' | '/estoque/novo' | '/estoque'
+  to:
+    | '/login'
+    | '/'
+    | '/estoque/$id'
+    | '/estoque/novo'
+    | '/financeiro/despesas'
+    | '/estoque'
+    | '/financeiro'
   id:
     | '__root__'
     | '/_authenticated'
@@ -83,7 +117,9 @@ export interface FileRouteTypes {
     | '/_authenticated/'
     | '/_authenticated/estoque/$id'
     | '/_authenticated/estoque/novo'
+    | '/_authenticated/financeiro/despesas'
     | '/_authenticated/estoque/'
+    | '/_authenticated/financeiro/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -114,11 +150,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/financeiro/': {
+      id: '/_authenticated/financeiro/'
+      path: '/financeiro'
+      fullPath: '/financeiro/'
+      preLoaderRoute: typeof AuthenticatedFinanceiroIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/estoque/': {
       id: '/_authenticated/estoque/'
       path: '/estoque'
       fullPath: '/estoque/'
       preLoaderRoute: typeof AuthenticatedEstoqueIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/financeiro/despesas': {
+      id: '/_authenticated/financeiro/despesas'
+      path: '/financeiro/despesas'
+      fullPath: '/financeiro/despesas'
+      preLoaderRoute: typeof AuthenticatedFinanceiroDespesasRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/estoque/novo': {
@@ -142,14 +192,18 @@ interface AuthenticatedRouteChildren {
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedEstoqueIdRoute: typeof AuthenticatedEstoqueIdRoute
   AuthenticatedEstoqueNovoRoute: typeof AuthenticatedEstoqueNovoRoute
+  AuthenticatedFinanceiroDespesasRoute: typeof AuthenticatedFinanceiroDespesasRoute
   AuthenticatedEstoqueIndexRoute: typeof AuthenticatedEstoqueIndexRoute
+  AuthenticatedFinanceiroIndexRoute: typeof AuthenticatedFinanceiroIndexRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedEstoqueIdRoute: AuthenticatedEstoqueIdRoute,
   AuthenticatedEstoqueNovoRoute: AuthenticatedEstoqueNovoRoute,
+  AuthenticatedFinanceiroDespesasRoute: AuthenticatedFinanceiroDespesasRoute,
   AuthenticatedEstoqueIndexRoute: AuthenticatedEstoqueIndexRoute,
+  AuthenticatedFinanceiroIndexRoute: AuthenticatedFinanceiroIndexRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
