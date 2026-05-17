@@ -32,6 +32,13 @@ function Relatorios() {
   const lucro = fat - cust - desp;
   const estoque = (data?.v ?? []).filter((x) => x.status !== "vendido").length;
 
+  const modelCount: Record<string, number> = {};
+  (data?.vendidos ?? []).forEach((v) => {
+    const key = [v.marca, v.modelo].filter(Boolean).join(" ");
+    if (key) modelCount[key] = (modelCount[key] ?? 0) + 1;
+  });
+  const maisVendido = Object.entries(modelCount).sort((a, b) => b[1] - a[1])[0];
+
   return (
     <>
       <PageHeader title="Relatórios" subtitle="Performance mensal" actions={
@@ -47,6 +54,12 @@ function Relatorios() {
           <div><p className="text-muted-foreground">Lucro líquido</p><p className={`text-2xl font-semibold ${lucro >= 0 ? "text-success" : "text-destructive"}`}>{fmtBRL(lucro)}</p></div>
           <div><p className="text-muted-foreground">Custos diretos</p><p className="text-xl">{fmtBRL(cust)}</p></div>
           <div><p className="text-muted-foreground">Despesas operacionais</p><p className="text-xl">{fmtBRL(desp)}</p></div>
+          {maisVendido && (
+            <div className="md:col-span-2">
+              <p className="text-muted-foreground">Modelo mais vendido no mês</p>
+              <p className="text-xl font-semibold">{maisVendido[0]} <span className="text-base font-normal text-muted-foreground">({maisVendido[1]}x)</span></p>
+            </div>
+          )}
         </div>
       </Card>
     </>

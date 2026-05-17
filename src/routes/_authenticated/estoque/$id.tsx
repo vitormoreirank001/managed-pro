@@ -17,7 +17,8 @@ import {
 import { StatusBadge, statusLabels, type VehicleStatus } from "@/components/app/StatusBadge";
 import { fmtBRL, fmtDate } from "@/lib/format";
 import { toast } from "sonner";
-import { ArrowLeft, Plus, Trash2, Car } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Car, Upload } from "lucide-react";
+import { useRef } from "react";
 
 const categorias = ["preparacao", "marketing", "gasolina", "operacional", "comissao", "outras"] as const;
 const catLabel: Record<(typeof categorias)[number], string> = {
@@ -60,6 +61,29 @@ function VeiculoDetalhe() {
   const lucro = venda > 0 ? venda - custo - totalDesp : 0;
 
   const [novaDesp, setNovaDesp] = useState({ categoria: "outras" as (typeof categorias)[number], descricao: "", valor: "" });
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  async function uploadImage(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    const path = `${id}/${Date.now()}-${file.name}`;
+    const { error } = await supabase.storage.from("vehicle-images").upload(path, file);
+    if (error) { toast.error(error.message); setUploading(false); return; }
+    await supabase.from("vehicle_images").insert({ vehicle_id: id, storage_path: path, ordem: data?.imgs.length ?? 0 });
+    qc.invalidateQueries({ queryKey: ["vehicle", id] });
+    toast.success("Imagem adicionada");
+    setUploading(false);
+    if (fileRef.current) fileRef.current.value = "";
+  }
+
+  async function removeImage(img: { id: string; storage_path: string }) {
+    await supabase.storage.from("vehicle-images").remove([img.storage_path]);
+    await supabase.from("vehicle_images").delete().eq("id", img.id);
+    qc.invalidateQueries({ queryKey: ["vehicle", id] });
+    toast.success("Imagem removida");
+  }
 
   async function addDesp(e: React.FormEvent) {
     e.preventDefault();
@@ -126,12 +150,27 @@ function VeiculoDetalhe() {
             {data?.imgs.length ? (
               <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                 {data.imgs.map((i) => (
-                  <img key={i.id} src={url(i.storage_path)} alt="" className="aspect-square object-cover rounded-lg" />
+                  <div key={i.id} className="relative group">
+                    <img src={url(i.storage_path)} alt="" className="aspect-square object-cover rounded-lg w-full" />
+                    <button
+                      onClick={() => removeImage(i)}
+                      className="absolute top-1 right-1 bg-black/60 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </button>
+                  </div>
                 ))}
               </div>
             ) : (
               <div className="aspect-[16/9] grid place-items-center text-muted-foreground"><Car className="h-12 w-12" /></div>
             )}
+            <div className="mt-2 p-2">
+              <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={uploadImage} />
+              <Button variant="outline" size="sm" className="w-full" disabled={uploading} onClick={() => fileRef.current?.click()}>
+                <Upload className="h-4 w-4 mr-2" />
+                {uploading ? "Enviando..." : "Adicionar foto"}
+              </Button>
+            </div>
           </Card>
 
           <Card className="p-6">
