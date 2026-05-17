@@ -87,7 +87,7 @@ function VeiculoDetalhe() {
   }
 
   async function updateVenda(field: string, value: string | null) {
-    await supabase.from("vehicles").update({ [field]: value ? Number(value) : null }).eq("id", id);
+    await supabase.from("vehicles").update({ [field]: value ? Number(value) : null } as any).eq("id", id);
     qc.invalidateQueries({ queryKey: ["vehicle", id] });
   }
 
