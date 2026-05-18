@@ -51,13 +51,18 @@ function Despesas() {
     data: hoje.toISOString().slice(0, 10),
   });
 
+  const [adding, setAdding] = useState(false);
+
   async function add(e: React.FormEvent) {
     e.preventDefault();
-    if (!f.valor) return;
+    if (!f.valor) { toast.error("Informe o valor da despesa"); return; }
+    if (Number(f.valor) <= 0) { toast.error("O valor deve ser maior que zero"); return; }
+    setAdding(true);
     const { error } = await supabase.from("expenses").insert({
       categoria: f.categoria, descricao: f.descricao || null, valor: Number(f.valor), data: f.data,
     });
-    if (error) return toast.error(error.message);
+    setAdding(false);
+    if (error) { toast.error(error.message); return; }
     setF({ ...f, descricao: "", valor: "" });
     qc.invalidateQueries({ queryKey: ["expenses"] });
     toast.success("Despesa registrada");
@@ -101,7 +106,7 @@ function Despesas() {
           <Input placeholder="Descrição" value={f.descricao} onChange={(e) => setF({ ...f, descricao: e.target.value })} />
           <Input type="number" step="0.01" placeholder="Valor" value={f.valor} onChange={(e) => setF({ ...f, valor: e.target.value })} />
           <Input type="date" value={f.data} onChange={(e) => setF({ ...f, data: e.target.value })} />
-          <Button type="submit">Adicionar</Button>
+          <Button type="submit" disabled={adding}>{adding ? "Salvando..." : "Adicionar"}</Button>
         </form>
       </Card>
 

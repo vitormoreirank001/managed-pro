@@ -1,10 +1,12 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/app/PageHeader";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { fmtBRL } from "@/lib/format";
 import { useState } from "react";
+import { RefreshCw } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export const Route = createFileRoute("/_authenticated/financeiro/dre")({
@@ -16,9 +18,11 @@ const meses = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "O
 
 function DRE() {
   const navigate = useNavigate();
+  const qc = useQueryClient();
   const [year, setYear] = useState(new Date().getFullYear());
-  const { data } = useQuery({
+  const { data, isFetching, refetch } = useQuery({
     queryKey: ["dre", year],
+    staleTime: 0,
     queryFn: async () => {
       const ini = `${year}-01-01`, fim = `${year}-12-31`;
       const [v, e] = await Promise.all([
@@ -61,12 +65,17 @@ function DRE() {
         title="DRE"
         subtitle="Demonstrativo de Resultados por mês"
         actions={
-          <Select value={String(year)} onValueChange={(v) => setYear(Number(v))}>
-            <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {[0, 1, 2].map((o) => { const y = new Date().getFullYear() - o; return <SelectItem key={y} value={String(y)}>{y}</SelectItem>; })}
-            </SelectContent>
-          </Select>
+          <div className="flex items-center gap-2">
+            <Select value={String(year)} onValueChange={(v) => { setYear(Number(v)); qc.invalidateQueries({ queryKey: ["dre"] }); }}>
+              <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {[0, 1, 2].map((o) => { const y = new Date().getFullYear() - o; return <SelectItem key={y} value={String(y)}>{y}</SelectItem>; })}
+              </SelectContent>
+            </Select>
+            <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
+              <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
+            </Button>
+          </div>
         }
       />
       <Card className="p-0 overflow-x-auto">
