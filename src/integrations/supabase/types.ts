@@ -428,7 +428,7 @@ export type Database = {
         | "comissao_venda"
         | "doc_venda"
       margin_type: "valor" | "percentual"
-      vehicle_status: "em_preparacao" | "pronto_venda" | "vendido" | "com_sinal"
+      vehicle_status: "em_preparacao" | "pronto_venda" | "vendido" | "com_sinal" | "arquivado"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -571,7 +571,7 @@ export const Constants = {
         "doc_venda",
       ],
       margin_type: ["valor", "percentual"],
-      vehicle_status: ["em_preparacao", "pronto_venda", "vendido", "com_sinal"],
+      vehicle_status: ["em_preparacao", "pronto_venda", "vendido", "com_sinal", "arquivado"],
     },
   },
 } as const

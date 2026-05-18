@@ -10,7 +10,7 @@ import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { StatusBadge, statusLabels, type VehicleStatus } from "@/components/app/StatusBadge";
-import { Plus, Search, Car, X, LayoutGrid, Kanban, ArrowRight, ArrowLeft } from "lucide-react";
+import { Plus, Search, Car, X, LayoutGrid, Kanban, ArrowRight, ArrowLeft, Archive } from "lucide-react";
 import { fmtBRL } from "@/lib/format";
 import { toast } from "sonner";
 
@@ -52,7 +52,7 @@ function EstoqueList() {
   const [status, setStatus] = useState<"todos" | VehicleStatus>(searchStatus ?? "todos");
   const [dateFrom, setDateFrom] = useState(searchDateFrom ?? "");
   const [dateTo, setDateTo] = useState(searchDateTo ?? "");
-  const [view, setView] = useState<"grid" | "kanban">("kanban");
+  const [view, setView] = useState<"grid" | "kanban" | "arquivados">("kanban");
 
   // Modal state for moving to "vendido"
   const [vendaModal, setVendaModal] = useState<{ vehicle: Vehicle } | null>(null);
@@ -73,8 +73,11 @@ function EstoqueList() {
   const vehicles = data?.vehs ?? [];
   const collabs = data?.collabs ?? [];
 
+  const arquivados = vehicles.filter((v) => v.status === "arquivado");
+  const ativos = vehicles.filter((v) => v.status !== "arquivado");
+
   const hasDateFilter = dateFrom || dateTo;
-  const filtered = vehicles.filter((v) => {
+  const filtered = ativos.filter((v) => {
     if (status !== "todos" && v.status !== status) return false;
     if (q && !`${v.modelo} ${v.marca ?? ""} ${v.placa ?? ""}`.toLowerCase().includes(q.toLowerCase())) return false;
     if (hasDateFilter) {
@@ -84,6 +87,10 @@ function EstoqueList() {
     }
     return true;
   });
+
+  const filteredArq = arquivados.filter((v) =>
+    !q || `${v.modelo} ${v.marca ?? ""} ${v.placa ?? ""}`.toLowerCase().includes(q.toLowerCase())
+  );
 
   const clearDates = () => { setDateFrom(""); setDateTo(""); };
 
@@ -115,11 +122,17 @@ function EstoqueList() {
 
   const statuses: ("todos" | VehicleStatus)[] = ["todos", "em_preparacao", "pronto_venda", "com_sinal", "vendido"];
 
+  async function desarquivar(vehicle: Vehicle) {
+    await supabase.from("vehicles").update({ status: "pronto_venda" }).eq("id", vehicle.id);
+    qc.invalidateQueries({ queryKey: ["vehicles"] });
+    toast.success("Veículo movido para Pronto para venda");
+  }
+
   return (
     <>
       <PageHeader
         title="Estoque"
-        subtitle={`${filtered.length} veículo(s)`}
+        subtitle={view === "arquivados" ? `${filteredArq.length} arquivado(s)` : `${filtered.length} veículo(s)`}
         actions={
           <div className="flex items-center gap-2">
             <Button size="sm" variant={view === "kanban" ? "default" : "outline"} onClick={() => setView("kanban")}>
@@ -127,6 +140,10 @@ function EstoqueList() {
             </Button>
             <Button size="sm" variant={view === "grid" ? "default" : "outline"} onClick={() => setView("grid")}>
               <LayoutGrid className="h-4 w-4 mr-1" /> Grade
+            </Button>
+            <Button size="sm" variant={view === "arquivados" ? "default" : "outline"} onClick={() => setView("arquivados")}>
+              <Archive className="h-4 w-4 mr-1" /> Arquivados
+              {arquivados.length > 0 && <span className="ml-1 bg-muted-foreground/20 rounded-full px-1.5 text-xs">{arquivados.length}</span>}
             </Button>
             <Button asChild>
               <Link to="/estoque/novo"><Plus className="h-4 w-4 mr-2" />Novo veículo</Link>
@@ -153,7 +170,7 @@ function EstoqueList() {
       </div>
 
       {/* Status filter (only in grid mode) */}
-      {view === "grid" && (
+      {view === "grid" && view !== "arquivados" && (
         <div className="flex gap-2 flex-wrap mb-4">
           {statuses.map((s) => (
             <Button key={s} size="sm" variant={status === s ? "default" : "outline"} onClick={() => setStatus(s)}>
@@ -257,6 +274,44 @@ function EstoqueList() {
                     </div>
                   </Card>
                 </Link>
+              );
+            })}
+          </div>
+        </>
+      )}
+
+      {/* ARQUIVADOS VIEW */}
+      {!isLoading && view === "arquivados" && (
+        <>
+          {filteredArq.length === 0 && (
+            <Card className="p-12 text-center">
+              <Archive className="h-10 w-10 mx-auto text-muted-foreground" />
+              <p className="mt-3 font-medium">Nenhum veículo arquivado</p>
+            </Card>
+          )}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredArq.map((v) => {
+              const url = imgUrl(v);
+              return (
+                <Card key={v.id} className="overflow-hidden opacity-75 hover:opacity-100 transition-opacity">
+                  <div className="aspect-[16/10] bg-muted relative">
+                    {url ? (
+                      <img src={url} alt={v.modelo} className="h-full w-full object-cover" />
+                    ) : (
+                      <div className="h-full w-full grid place-items-center text-muted-foreground"><Car className="h-10 w-10" /></div>
+                    )}
+                  </div>
+                  <div className="p-4">
+                    <Link to="/estoque/$id" params={{ id: v.id }} className="font-semibold hover:underline truncate block">{v.modelo}</Link>
+                    <p className="text-xs text-muted-foreground">{v.marca ?? ""} {v.ano ?? ""} {v.placa ? `· ${v.placa}` : ""}</p>
+                    <div className="mt-3 flex items-center justify-between gap-2">
+                      <span className="text-sm font-medium">{fmtBRL(Number(v.valor_venda ?? v.valor_sugerido ?? 0))}</span>
+                      <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => desarquivar(v)}>
+                        <ArrowRight className="h-3 w-3 mr-1" /> Restaurar
+                      </Button>
+                    </div>
+                  </div>
+                </Card>
               );
             })}
           </div>

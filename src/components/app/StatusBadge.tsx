@@ -5,6 +5,7 @@ const map = {
   pronto_venda: { label: "Pronto para venda", cls: "bg-primary-soft text-primary" },
   vendido: { label: "Vendido", cls: "bg-success/20 text-success" },
   com_sinal: { label: "Com sinal", cls: "bg-accent text-accent-foreground" },
+  arquivado: { label: "Arquivado", cls: "bg-muted text-muted-foreground" },
 } as const;
 
 export type VehicleStatus = keyof typeof map;

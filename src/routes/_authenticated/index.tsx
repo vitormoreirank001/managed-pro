@@ -97,7 +97,7 @@ function Dashboard() {
   const topQtd = [...byVendedor.entries()].sort((a, b) => b[1].count - a[1].count)[0];
   const topFat = [...byVendedor.entries()].sort((a, b) => b[1].valor - a[1].valor)[0];
 
-  const recentes = [...v].sort((a, b) => +new Date(b.created_at) - +new Date(a.created_at)).slice(0, 5);
+  const recentes = [...v].filter((x) => x.status !== "arquivado").sort((a, b) => +new Date(b.created_at) - +new Date(a.created_at)).slice(0, 5);
 
   const meta = data?.meta;
   const tierVendas = meta ? getTier(vendidosMes.length, meta.ouro_vendas, meta.prata_vendas, meta.bronze_vendas) : null;
