@@ -263,6 +263,48 @@ export type Database = {
           },
         ]
       }
+      metas: {
+        Row: {
+          id: string
+          user_id: string
+          year: number
+          month: number
+          bronze_vendas: number
+          prata_vendas: number
+          ouro_vendas: number
+          bronze_lucro: number
+          prata_lucro: number
+          ouro_lucro: number
+          created_at: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          year: number
+          month: number
+          bronze_vendas?: number
+          prata_vendas?: number
+          ouro_vendas?: number
+          bronze_lucro?: number
+          prata_lucro?: number
+          ouro_lucro?: number
+          created_at?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          year?: number
+          month?: number
+          bronze_vendas?: number
+          prata_vendas?: number
+          ouro_vendas?: number
+          bronze_lucro?: number
+          prata_lucro?: number
+          ouro_lucro?: number
+          created_at?: string | null
+        }
+        Relationships: []
+      }
       vehicles: {
         Row: {
           ano: number | null
@@ -288,6 +330,9 @@ export type Database = {
           valor_venda: number | null
           vendedor_id: string | null
           vendido_em: string | null
+          autoconf_id: string | null
+          autoconf_url: string | null
+          synced_at: string | null
         }
         Insert: {
           ano?: number | null
@@ -313,6 +358,9 @@ export type Database = {
           valor_venda?: number | null
           vendedor_id?: string | null
           vendido_em?: string | null
+          autoconf_id?: string | null
+          autoconf_url?: string | null
+          synced_at?: string | null
         }
         Update: {
           ano?: number | null
@@ -338,6 +386,9 @@ export type Database = {
           valor_venda?: number | null
           vendedor_id?: string | null
           vendido_em?: string | null
+          autoconf_id?: string | null
+          autoconf_url?: string | null
+          synced_at?: string | null
         }
         Relationships: [
           {
@@ -371,6 +422,11 @@ export type Database = {
         | "operacional"
         | "comissao"
         | "outras"
+        | "doc_compra"
+        | "manutencao"
+        | "frete_venda"
+        | "comissao_venda"
+        | "doc_venda"
       margin_type: "valor" | "percentual"
       vehicle_status: "em_preparacao" | "pronto_venda" | "vendido" | "com_sinal"
     }
@@ -508,6 +564,11 @@ export const Constants = {
         "operacional",
         "comissao",
         "outras",
+        "doc_compra",
+        "manutencao",
+        "frete_venda",
+        "comissao_venda",
+        "doc_venda",
       ],
       margin_type: ["valor", "percentual"],
       vehicle_status: ["em_preparacao", "pronto_venda", "vendido", "com_sinal"],

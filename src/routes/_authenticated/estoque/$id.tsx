@@ -20,8 +20,16 @@ import { toast } from "sonner";
 import { ArrowLeft, Plus, Trash2, Car, Upload } from "lucide-react";
 import { useRef } from "react";
 
-const categorias = ["preparacao", "marketing", "gasolina", "operacional", "comissao", "outras"] as const;
+const categorias = [
+  "doc_compra", "manutencao", "frete_venda", "comissao_venda", "doc_venda",
+  "preparacao", "marketing", "gasolina", "operacional", "comissao", "outras",
+] as const;
 const catLabel: Record<(typeof categorias)[number], string> = {
+  doc_compra: "Doc. de compra",
+  manutencao: "Manutenção para venda",
+  frete_venda: "Frete de venda",
+  comissao_venda: "Comissão de venda",
+  doc_venda: "Doc. de venda",
   preparacao: "Preparação",
   marketing: "Marketing",
   gasolina: "Gasolina",
@@ -79,7 +87,9 @@ function VeiculoDetalhe() {
   }
 
   async function removeImage(img: { id: string; storage_path: string }) {
-    await supabase.storage.from("vehicle-images").remove([img.storage_path]);
+    if (!img.storage_path.startsWith("http")) {
+      await supabase.storage.from("vehicle-images").remove([img.storage_path]);
+    }
     await supabase.from("vehicle_images").delete().eq("id", img.id);
     qc.invalidateQueries({ queryKey: ["vehicle", id] });
     toast.success("Imagem removida");
@@ -120,6 +130,11 @@ function VeiculoDetalhe() {
     qc.invalidateQueries({ queryKey: ["vehicle", id] });
   }
 
+  async function updateVendidoEm(value: string) {
+    await supabase.from("vehicles").update({ vendido_em: value || null }).eq("id", id);
+    qc.invalidateQueries({ queryKey: ["vehicle", id] });
+  }
+
   async function excluir() {
     if (!confirm("Excluir este veículo?")) return;
     await supabase.from("vehicles").delete().eq("id", id);
@@ -129,7 +144,8 @@ function VeiculoDetalhe() {
 
   if (!v) return <p className="text-sm text-muted-foreground">Carregando...</p>;
 
-  const url = (p: string) => supabase.storage.from("vehicle-images").getPublicUrl(p).data.publicUrl;
+  const url = (p: string) =>
+    p.startsWith("http") ? p : supabase.storage.from("vehicle-images").getPublicUrl(p).data.publicUrl;
 
   return (
     <>
@@ -240,6 +256,16 @@ function VeiculoDetalhe() {
                 <Label className="text-xs">Sinal recebido</Label>
                 <Input type="number" step="0.01" defaultValue={v.sinal_valor ?? ""} onBlur={(e) => updateVenda("sinal_valor", e.target.value)} />
               </div>
+              {v.status === "vendido" && (
+                <div>
+                  <Label className="text-xs">Data da venda</Label>
+                  <Input
+                    type="date"
+                    defaultValue={v.vendido_em ?? ""}
+                    onBlur={(e) => updateVendidoEm(e.target.value)}
+                  />
+                </div>
+              )}
             </div>
           </Card>
 

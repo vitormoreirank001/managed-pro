@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/app/PageHeader";
 import { Card } from "@/components/ui/card";
@@ -7,10 +8,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/lib/auth";
 import { useTheme } from "@/lib/theme";
 import { toast } from "sonner";
-import { Sun, Moon } from "lucide-react";
+import { Sun, Moon, RefreshCw, Plus, ShieldCheck, ShieldOff, Users } from "lucide-react";
 import type { MarginType } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/configuracoes/")({
@@ -18,14 +21,46 @@ export const Route = createFileRoute("/_authenticated/configuracoes/")({
   component: Config,
 });
 
+type UserEntry = {
+  id: string;
+  email: string;
+  nome: string;
+  role: string | null;
+  bloqueado: boolean;
+};
+
+const roleLabels: Record<string, string> = {
+  admin: "Admin",
+  gestor: "Gestor",
+  vendedor: "Vendedor",
+  marketing: "Marketing",
+};
+
+const roleCls: Record<string, string> = {
+  admin: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 border-blue-200 dark:border-blue-700",
+  gestor: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300 border-purple-200 dark:border-purple-700",
+  vendedor: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 border-green-200 dark:border-green-700",
+  marketing: "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300 border-orange-200 dark:border-orange-700",
+};
+
 function Config() {
   const { user } = useAuth();
   const { theme, toggle } = useTheme();
+  const qc = useQueryClient();
+
+  // Profile / settings
   const [loja, setLoja] = useState("");
   const [nome, setNome] = useState("");
   const [mtipo, setMtipo] = useState<MarginType>("valor");
   const [mmin, setMmin] = useState("5000");
   const [mmax, setMmax] = useState("10000");
+  const [syncing, setSyncing] = useState(false);
+  const [syncResult, setSyncResult] = useState<{ synced?: number; errors?: number; message?: string } | null>(null);
+
+  // New user modal
+  const [modal, setModal] = useState(false);
+  const [form, setForm] = useState({ email: "", nome: "", password: "", role: "vendedor" });
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -37,10 +72,39 @@ function Config() {
     });
   }, [user]);
 
+  // Users list
+  const { data: usuarios, isLoading: loadingUsers } = useQuery<UserEntry[]>({
+    queryKey: ["admin-users"],
+    enabled: !!user,
+    queryFn: async () => {
+      const { data, error } = await supabase.functions.invoke("admin-users", {
+        body: { action: "list" },
+      });
+      if (error) throw error;
+      return data as UserEntry[];
+    },
+  });
+
   async function saveProfile() {
     const { error } = await supabase.from("profiles").update({ nome, loja_nome: loja }).eq("id", user!.id);
     if (error) return toast.error(error.message);
-    toast.success("Perfil atualizado — recarregue para ver o nome da loja");
+    toast.success("Perfil atualizado");
+  }
+
+  async function syncAutoconf() {
+    setSyncing(true);
+    setSyncResult(null);
+    try {
+      const { data, error } = await supabase.functions.invoke("sync-autoconf");
+      if (error) throw error;
+      setSyncResult(data);
+      toast.success(`Sincronização concluída: ${data?.synced ?? 0} veículos sincronizados`);
+    } catch (err: any) {
+      toast.error(err?.message ?? "Erro ao sincronizar");
+      setSyncResult({ message: err?.message ?? "Erro desconhecido" });
+    } finally {
+      setSyncing(false);
+    }
   }
 
   async function saveSettings() {
@@ -54,10 +118,45 @@ function Config() {
     toast.success("Configurações salvas");
   }
 
+  async function criarUsuario() {
+    if (!form.email || !form.password) { toast.error("Email e senha obrigatórios"); return; }
+    setSaving(true);
+    const { data, error } = await supabase.functions.invoke("admin-users", {
+      body: { action: "create", email: form.email, password: form.password, nome: form.nome, role: form.role },
+    });
+    setSaving(false);
+    if (error || data?.error) { toast.error(data?.error ?? error?.message); return; }
+    toast.success("Usuário criado com sucesso");
+    setModal(false);
+    setForm({ email: "", nome: "", password: "", role: "vendedor" });
+    qc.invalidateQueries({ queryKey: ["admin-users"] });
+  }
+
+  async function toggleBan(u: UserEntry) {
+    const ban = !u.bloqueado;
+    const { data, error } = await supabase.functions.invoke("admin-users", {
+      body: { action: "toggle-ban", userId: u.id, ban },
+    });
+    if (error || data?.error) { toast.error(data?.error ?? error?.message); return; }
+    toast.success(ban ? `${u.email} bloqueado` : `${u.email} desbloqueado`);
+    qc.invalidateQueries({ queryKey: ["admin-users"] });
+  }
+
+  async function updateRole(u: UserEntry, role: string) {
+    const { data, error } = await supabase.functions.invoke("admin-users", {
+      body: { action: "update-role", userId: u.id, role: role === "none" ? null : role },
+    });
+    if (error || data?.error) { toast.error(data?.error ?? error?.message); return; }
+    toast.success("Permissão atualizada");
+    qc.invalidateQueries({ queryKey: ["admin-users"] });
+  }
+
   return (
     <>
       <PageHeader title="Configurações" subtitle="Personalize a plataforma" />
       <div className="grid lg:grid-cols-2 gap-6">
+
+        {/* Perfil */}
         <Card className="p-6">
           <h3 className="font-semibold mb-4">Identidade da loja</h3>
           <div className="space-y-3">
@@ -71,6 +170,7 @@ function Config() {
           </div>
         </Card>
 
+        {/* Margem */}
         <Card className="p-6">
           <h3 className="font-semibold mb-4">Margem padrão</h3>
           <Tabs value={mtipo} onValueChange={(v) => setMtipo(v as MarginType)}>
@@ -86,6 +186,26 @@ function Config() {
           <Button onClick={saveSettings} className="mt-4">Salvar margem padrão</Button>
         </Card>
 
+        {/* Autoconf */}
+        <Card className="p-6 lg:col-span-2">
+          <h3 className="font-semibold mb-2">Integração Autoconf</h3>
+          <p className="text-sm text-muted-foreground mb-4">Sincroniza veículos, preços e fotos do site gustavomotors.com.br automaticamente.</p>
+          <div className="flex items-center gap-4">
+            <Button onClick={syncAutoconf} disabled={syncing} variant="outline">
+              <RefreshCw className={`h-4 w-4 mr-2 ${syncing ? "animate-spin" : ""}`} />
+              {syncing ? "Sincronizando..." : "Sincronizar agora"}
+            </Button>
+            {syncResult && (
+              <p className="text-sm text-muted-foreground">
+                {syncResult.message
+                  ? `Erro: ${syncResult.message}`
+                  : `${syncResult.synced ?? 0} sincronizados · ${syncResult.errors ?? 0} erros`}
+              </p>
+            )}
+          </div>
+        </Card>
+
+        {/* Aparência */}
         <Card className="p-6 lg:col-span-2">
           <h3 className="font-semibold mb-4">Aparência</h3>
           <div className="flex items-center justify-between">
@@ -98,7 +218,144 @@ function Config() {
             </Button>
           </div>
         </Card>
+
+        {/* Usuários */}
+        <Card className="p-6 lg:col-span-2">
+          <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center gap-2">
+              <Users className="h-4 w-4 text-primary" />
+              <h3 className="font-semibold">Usuários</h3>
+            </div>
+            <Button size="sm" onClick={() => setModal(true)}>
+              <Plus className="h-4 w-4 mr-2" />Novo usuário
+            </Button>
+          </div>
+
+          {loadingUsers && <p className="text-sm text-muted-foreground">Carregando usuários...</p>}
+
+          {!loadingUsers && (usuarios?.length ?? 0) === 0 && (
+            <p className="text-sm text-muted-foreground">Nenhum usuário cadastrado.</p>
+          )}
+
+          <div className="divide-y divide-border">
+            {(usuarios ?? []).map((u) => (
+              <div key={u.id} className="flex items-center gap-3 py-3 flex-wrap">
+                {/* Info */}
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-sm truncate">{u.nome || u.email}</p>
+                  <p className="text-xs text-muted-foreground truncate">{u.email}</p>
+                </div>
+
+                {/* Status badge */}
+                {u.bloqueado && (
+                  <span className="text-xs font-medium px-2 py-0.5 rounded-full border bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-700 whitespace-nowrap">
+                    Bloqueado
+                  </span>
+                )}
+
+                {/* Role selector */}
+                <Select
+                  value={u.role ?? "none"}
+                  onValueChange={(role) => updateRole(u, role)}
+                >
+                  <SelectTrigger className="w-32 h-8 text-xs">
+                    <SelectValue>
+                      {u.role ? (
+                        <span className={`text-xs font-medium px-1.5 py-0.5 rounded border ${roleCls[u.role] ?? ""}`}>
+                          {roleLabels[u.role] ?? u.role}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground">Sem papel</span>
+                      )}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Sem papel</SelectItem>
+                    {Object.entries(roleLabels).map(([k, v]) => (
+                      <SelectItem key={k} value={k}>{v}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                {/* Block / unblock */}
+                {u.id !== user?.id && (
+                  <Button
+                    size="sm"
+                    variant={u.bloqueado ? "outline" : "outline"}
+                    className={u.bloqueado ? "text-success border-success/40 hover:bg-success/10" : "text-destructive border-destructive/40 hover:bg-destructive/10"}
+                    onClick={() => toggleBan(u)}
+                  >
+                    {u.bloqueado
+                      ? <><ShieldCheck className="h-3.5 w-3.5 mr-1.5" />Desbloquear</>
+                      : <><ShieldOff className="h-3.5 w-3.5 mr-1.5" />Bloquear</>
+                    }
+                  </Button>
+                )}
+              </div>
+            ))}
+          </div>
+        </Card>
       </div>
+
+      {/* Modal: Novo usuário */}
+      <Dialog open={modal} onOpenChange={(o) => { if (!saving) setModal(o); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Novo usuário</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div>
+              <Label>Nome</Label>
+              <Input
+                placeholder="Nome completo"
+                value={form.nome}
+                onChange={(e) => setForm((f) => ({ ...f, nome: e.target.value }))}
+              />
+            </div>
+            <div>
+              <Label>Gmail <span className="text-destructive">*</span></Label>
+              <Input
+                type="email"
+                placeholder="usuario@gmail.com"
+                value={form.email}
+                onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+              />
+            </div>
+            <div>
+              <Label>Senha <span className="text-destructive">*</span></Label>
+              <Input
+                type="password"
+                placeholder="Senha de acesso"
+                value={form.password}
+                onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
+              />
+            </div>
+            <div>
+              <Label>Permissão</Label>
+              <Select value={form.role} onValueChange={(v) => setForm((f) => ({ ...f, role: v }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {Object.entries(roleLabels).map(([k, v]) => (
+                    <SelectItem key={k} value={k}>{v}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <div className="mt-2 text-xs text-muted-foreground space-y-0.5">
+                <p><span className="font-medium">Admin</span> — acesso total, incluindo configurações</p>
+                <p><span className="font-medium">Gestor</span> — visualiza tudo, edita estoque e financeiro</p>
+                <p><span className="font-medium">Vendedor</span> — acessa estoque e registra vendas</p>
+                <p><span className="font-medium">Marketing</span> — visualização somente</p>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setModal(false)} disabled={saving}>Cancelar</Button>
+            <Button onClick={criarUsuario} disabled={saving || !form.email || !form.password}>
+              {saving ? "Criando..." : "Criar usuário"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

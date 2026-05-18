@@ -1,50 +1,90 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/auth";
 import { PageHeader } from "@/components/app/PageHeader";
 import { StatCard } from "@/components/app/StatCard";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Car, Wrench, CircleDollarSign, Handshake, TrendingUp, TrendingDown, Trophy, Plus } from "lucide-react";
-import { fmtBRL, fmtInt, monthStart, monthEnd } from "@/lib/format";
+import { fmtBRL, fmtInt } from "@/lib/format";
 import { StatusBadge } from "@/components/app/StatusBadge";
+
+const MESES = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({ meta: [{ title: "Painel — Managed" }] }),
   component: Dashboard,
 });
 
+function CardLink({ to, search, children }: { to: string; search?: Record<string, string>; children: React.ReactNode }) {
+  const href = search ? `${to}?${new URLSearchParams(search).toString()}` : to;
+  return <Link to={href as any} className="block">{children}</Link>;
+}
+
+type Tier = "ouro" | "prata" | "bronze" | null;
+function getTier(v: number, o: number, p: number, b: number): Tier {
+  if (o > 0 && v >= o) return "ouro";
+  if (p > 0 && v >= p) return "prata";
+  if (b > 0 && v >= b) return "bronze";
+  return null;
+}
+const tierCfg = {
+  ouro:   { icon: "🥇", label: "Ouro",   cls: "text-yellow-600 bg-yellow-50 border-yellow-200 dark:bg-yellow-950/20 dark:border-yellow-700" },
+  prata:  { icon: "🥈", label: "Prata",  cls: "text-slate-500  bg-slate-50  border-slate-200  dark:bg-slate-900/40  dark:border-slate-600" },
+  bronze: { icon: "🥉", label: "Bronze", cls: "text-orange-600 bg-orange-50 border-orange-200 dark:bg-orange-950/20 dark:border-orange-700" },
+};
+
 function Dashboard() {
+  const { user } = useAuth();
+  const hoje = new Date();
+  const [year, setYear] = useState(hoje.getFullYear());
+  const [month, setMonth] = useState(hoje.getMonth() + 1);
+
+  const { ini, fim } = useMemo(() => {
+    const end = new Date(year, month, 0);
+    return {
+      ini: `${year}-${String(month).padStart(2, "0")}-01`,
+      fim: end.toISOString().slice(0, 10),
+    };
+  }, [year, month]);
+
+  const mesLabel = MESES[month - 1];
+  const years = [0, 1, 2].map((o) => hoje.getFullYear() - o);
+
   const { data } = useQuery({
-    queryKey: ["dashboard"],
+    queryKey: ["dashboard", year, month, user?.id],
+    enabled: !!user,
     queryFn: async () => {
-      const [{ data: vehicles }, { data: expenses }, { data: vehExp }, { data: collabs }] = await Promise.all([
+      const [{ data: vehicles }, { data: expenses }, { data: collabs }, { data: meta }] = await Promise.all([
         supabase.from("vehicles").select("*"),
-        supabase.from("expenses").select("valor, data").gte("data", monthStart().slice(0, 10)).lte("data", monthEnd().slice(0, 10)),
-        supabase.from("vehicle_expenses").select("valor, vehicle_id"),
+        supabase.from("expenses").select("valor, data").gte("data", ini).lte("data", fim),
         supabase.from("collaborators").select("id, nome"),
+        supabase.from("metas").select("*").eq("user_id", user!.id).eq("year", year).eq("month", month).maybeSingle(),
       ]);
-      return { vehicles: vehicles ?? [], expenses: expenses ?? [], vehExp: vehExp ?? [], collabs: collabs ?? [] };
+      return { vehicles: vehicles ?? [], expenses: expenses ?? [], collabs: collabs ?? [], meta: meta ?? null };
     },
   });
 
   const v = data?.vehicles ?? [];
   const expSum = (data?.expenses ?? []).reduce((s, e) => s + Number(e.valor), 0);
-  const vehExpSum = (data?.vehExp ?? []).reduce((s, e) => s + Number(e.valor), 0);
 
   const emEstoque = v.filter((x) => x.status === "pronto_venda").length;
   const emPrep = v.filter((x) => x.status === "em_preparacao").length;
   const comSinal = v.filter((x) => x.status === "com_sinal").length;
-  const vendidos = v.filter((x) => x.status === "vendido");
 
-  const inicioMes = new Date(monthStart());
-  const vendidosMes = vendidos.filter((x) => x.vendido_em && new Date(x.vendido_em) >= inicioMes);
+  const vendidosMes = v.filter((x) => x.status === "vendido" && x.vendido_em && x.vendido_em >= ini && x.vendido_em <= fim);
   const faturamento = vendidosMes.reduce((s, x) => s + Number(x.valor_venda ?? 0), 0);
   const custo = vendidosMes.reduce((s, x) => s + Number(x.valor_compra) + Number(x.valor_preparacao), 0);
-  const lucroBruto = faturamento - custo;
-  const lucro = lucroBruto - expSum;
+  const lucro = faturamento - custo - expSum;
 
-  // Top vendedor
+  const mesNum = String(month).padStart(2, "0");
+  const lastDay = new Date(year, month, 0).getDate();
+  const dateFrom = `${year}-${mesNum}-01`;
+  const dateTo = `${year}-${mesNum}-${String(lastDay).padStart(2, "0")}`;
+
   const byVendedor = new Map<string, { count: number; valor: number }>();
   vendidosMes.forEach((x) => {
     if (!x.vendedor_id) return;
@@ -59,37 +99,132 @@ function Dashboard() {
 
   const recentes = [...v].sort((a, b) => +new Date(b.created_at) - +new Date(a.created_at)).slice(0, 5);
 
+  const meta = data?.meta;
+  const tierVendas = meta ? getTier(vendidosMes.length, meta.ouro_vendas, meta.prata_vendas, meta.bronze_vendas) : null;
+  const tierLucro  = meta ? getTier(lucro, Number(meta.ouro_lucro), Number(meta.prata_lucro), Number(meta.bronze_lucro)) : null;
+
+  const cardCls = "cursor-pointer hover:shadow-md transition-shadow";
+
   return (
     <>
       <PageHeader
         title="Painel"
-        subtitle="Visão geral da sua operação"
+        subtitle={`${mesLabel} ${year}`}
         actions={
-          <Button asChild>
-            <Link to="/estoque/novo">
-              <Plus className="h-4 w-4 mr-2" />
-              Novo veículo
-            </Link>
-          </Button>
+          <div className="flex items-center gap-2">
+            <Select value={String(month)} onValueChange={(v) => setMonth(Number(v))}>
+              <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {MESES.map((m, i) => <SelectItem key={i} value={String(i + 1)}>{m}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Select value={String(year)} onValueChange={(v) => setYear(Number(v))}>
+              <SelectTrigger className="w-24"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {years.map((y) => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Button asChild>
+              <Link to="/estoque/novo">
+                <Plus className="h-4 w-4 mr-2" />
+                Novo veículo
+              </Link>
+            </Button>
+          </div>
         }
       />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Em estoque" value={fmtInt(emEstoque)} icon={Car} tone="primary" />
-        <StatCard label="Em preparação" value={fmtInt(emPrep)} icon={Wrench} tone="warning" />
-        <StatCard label="Vendidos no mês" value={fmtInt(vendidosMes.length)} icon={CircleDollarSign} tone="success" />
-        <StatCard label="Com sinal" value={fmtInt(comSinal)} icon={Handshake} />
+        <CardLink to="/estoque" search={{ status: "pronto_venda" }}>
+          <StatCard label="Em estoque" value={fmtInt(emEstoque)} icon={Car} tone="primary" className={cardCls} />
+        </CardLink>
+        <CardLink to="/estoque" search={{ status: "em_preparacao" }}>
+          <StatCard label="Em preparação" value={fmtInt(emPrep)} icon={Wrench} tone="warning" className={cardCls} />
+        </CardLink>
+        <CardLink to="/estoque" search={{ status: "vendido", dateFrom, dateTo }}>
+          <StatCard label={`Vendidos — ${mesLabel}`} value={fmtInt(vendidosMes.length)} icon={CircleDollarSign} tone="success" className={cardCls} />
+        </CardLink>
+        <CardLink to="/estoque" search={{ status: "com_sinal" }}>
+          <StatCard label="Com sinal" value={fmtInt(comSinal)} icon={Handshake} className={cardCls} />
+        </CardLink>
       </div>
 
       <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <StatCard label="Faturamento do mês" value={fmtBRL(faturamento)} icon={TrendingUp} tone="success" hint={`${vendidosMes.length} veículos vendidos`} />
-        <StatCard label="Lucro estimado" value={fmtBRL(lucro)} icon={TrendingUp} tone="primary" hint="Receita − custo − despesas" />
-        <StatCard label="Despesas do mês" value={fmtBRL(expSum + vehExpSum)} icon={TrendingDown} tone="destructive" />
+        <CardLink to="/financeiro">
+          <StatCard label={`Faturamento — ${mesLabel}`} value={fmtBRL(faturamento)} icon={TrendingUp} tone="success" hint={`${vendidosMes.length} veículos vendidos`} className={cardCls} />
+        </CardLink>
+        <CardLink to="/financeiro">
+          <StatCard label="Lucro estimado" value={fmtBRL(lucro)} icon={TrendingUp} tone="primary" hint="Receita − custo − despesas" className={cardCls} />
+        </CardLink>
+        <CardLink to="/financeiro/despesas">
+          <StatCard label={`Despesas — ${mesLabel}`} value={fmtBRL(expSum)} icon={TrendingDown} tone="destructive" hint="Despesas gerais do mês" className={cardCls} />
+        </CardLink>
       </div>
+
+      {/* Metas do mês */}
+      {meta ? (
+        <div className="mt-6">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-semibold flex items-center gap-2"><Trophy className="h-4 w-4 text-primary" /> Metas — {mesLabel}</h3>
+            <Link to="/metas" className="text-xs text-primary hover:underline">Configurar metas</Link>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Vendas */}
+            <Card className="p-5">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm font-medium">Meta de Vendas</p>
+                {tierVendas ? (
+                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${tierCfg[tierVendas].cls}`}>
+                    {tierCfg[tierVendas].icon} {tierCfg[tierVendas].label}
+                  </span>
+                ) : <span className="text-xs text-muted-foreground">Abaixo da meta</span>}
+              </div>
+              <p className="text-3xl font-bold">{fmtInt(vendidosMes.length)}<span className="text-base font-normal text-muted-foreground"> / {meta.ouro_vendas} carros</span></p>
+              <div className="mt-3 w-full bg-muted rounded-full h-2">
+                <div
+                  className={`h-2 rounded-full transition-all ${tierVendas === "ouro" ? "bg-yellow-500" : tierVendas === "prata" ? "bg-slate-400" : tierVendas === "bronze" ? "bg-orange-500" : "bg-primary"}`}
+                  style={{ width: `${meta.ouro_vendas > 0 ? Math.min(100, (vendidosMes.length / meta.ouro_vendas) * 100) : 0}%` }}
+                />
+              </div>
+              <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                <span>🥉 {meta.bronze_vendas}</span><span>🥈 {meta.prata_vendas}</span><span>🥇 {meta.ouro_vendas}</span>
+              </div>
+            </Card>
+            {/* Lucro */}
+            <Card className="p-5">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm font-medium">Meta de Lucro</p>
+                {tierLucro ? (
+                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${tierCfg[tierLucro].cls}`}>
+                    {tierCfg[tierLucro].icon} {tierCfg[tierLucro].label}
+                  </span>
+                ) : <span className="text-xs text-muted-foreground">Abaixo da meta</span>}
+              </div>
+              <p className={`text-3xl font-bold ${lucro >= 0 ? "text-success" : "text-destructive"}`}>{fmtBRL(lucro)}</p>
+              <p className="text-xs text-muted-foreground">meta ouro: {fmtBRL(Number(meta.ouro_lucro))}</p>
+              <div className="mt-3 w-full bg-muted rounded-full h-2">
+                <div
+                  className={`h-2 rounded-full transition-all ${tierLucro === "ouro" ? "bg-yellow-500" : tierLucro === "prata" ? "bg-slate-400" : tierLucro === "bronze" ? "bg-orange-500" : "bg-primary"}`}
+                  style={{ width: `${Number(meta.ouro_lucro) > 0 ? Math.min(100, (lucro / Number(meta.ouro_lucro)) * 100) : 0}%` }}
+                />
+              </div>
+              <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                <span>🥉 {fmtBRL(Number(meta.bronze_lucro))}</span><span>🥈 {fmtBRL(Number(meta.prata_lucro))}</span><span>🥇 {fmtBRL(Number(meta.ouro_lucro))}</span>
+              </div>
+            </Card>
+          </div>
+        </div>
+      ) : (
+        <div className="mt-6">
+          <Link to="/metas" className="text-sm text-primary hover:underline flex items-center gap-1">
+            <Trophy className="h-4 w-4" /> Configurar metas para {mesLabel}
+          </Link>
+        </div>
+      )}
 
       <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card className="p-6">
-          <h3 className="font-semibold flex items-center gap-2"><Trophy className="h-4 w-4 text-primary" /> Performance dos vendedores</h3>
+          <h3 className="font-semibold flex items-center gap-2"><Trophy className="h-4 w-4 text-primary" /> Performance — {mesLabel}</h3>
           <div className="mt-4 space-y-3 text-sm">
             <div className="flex justify-between items-center p-3 rounded-lg bg-muted">
               <div>

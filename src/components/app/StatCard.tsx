@@ -8,12 +8,14 @@ export function StatCard({
   icon: Icon,
   hint,
   tone = "default",
+  className,
 }: {
   label: string;
   value: string | number;
   icon?: LucideIcon;
   hint?: string;
   tone?: "default" | "success" | "warning" | "destructive" | "primary";
+  className?: string;
 }) {
   const tones = {
     default: "bg-muted text-foreground",
@@ -23,7 +25,7 @@ export function StatCard({
     destructive: "bg-destructive/15 text-destructive",
   } as const;
   return (
-    <Card className="p-5">
+    <Card className={cn("p-5", className)}>
       <div className="flex items-start justify-between">
         <div>
           <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium">{label}</p>

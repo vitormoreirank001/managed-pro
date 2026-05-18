@@ -17,6 +17,7 @@ import { Route as AuthenticatedFinanceiroIndexRouteImport } from './routes/_auth
 import { Route as AuthenticatedEstoqueIndexRouteImport } from './routes/_authenticated/estoque/index'
 import { Route as AuthenticatedConfiguracoesIndexRouteImport } from './routes/_authenticated/configuracoes/index'
 import { Route as AuthenticatedColaboradoresIndexRouteImport } from './routes/_authenticated/colaboradores/index'
+import { Route as AuthenticatedMetasIndexRouteImport } from './routes/_authenticated/metas/index'
 import { Route as AuthenticatedFinanceiroMargemRouteImport } from './routes/_authenticated/financeiro/margem'
 import { Route as AuthenticatedFinanceiroDreRouteImport } from './routes/_authenticated/financeiro/dre'
 import { Route as AuthenticatedFinanceiroDespesasRouteImport } from './routes/_authenticated/financeiro/despesas'
@@ -67,6 +68,12 @@ const AuthenticatedColaboradoresIndexRoute =
     path: '/colaboradores/',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedMetasIndexRoute =
+  AuthenticatedMetasIndexRouteImport.update({
+    id: '/metas/',
+    path: '/metas/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedFinanceiroMargemRoute =
   AuthenticatedFinanceiroMargemRouteImport.update({
     id: '/financeiro/margem',
@@ -110,6 +117,7 @@ export interface FileRoutesByFullPath {
   '/estoque/': typeof AuthenticatedEstoqueIndexRoute
   '/financeiro/': typeof AuthenticatedFinanceiroIndexRoute
   '/relatorios/': typeof AuthenticatedRelatoriosIndexRoute
+  '/metas/': typeof AuthenticatedMetasIndexRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
@@ -124,6 +132,7 @@ export interface FileRoutesByTo {
   '/estoque': typeof AuthenticatedEstoqueIndexRoute
   '/financeiro': typeof AuthenticatedFinanceiroIndexRoute
   '/relatorios': typeof AuthenticatedRelatoriosIndexRoute
+  '/metas': typeof AuthenticatedMetasIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -140,6 +149,7 @@ export interface FileRoutesById {
   '/_authenticated/estoque/': typeof AuthenticatedEstoqueIndexRoute
   '/_authenticated/financeiro/': typeof AuthenticatedFinanceiroIndexRoute
   '/_authenticated/relatorios/': typeof AuthenticatedRelatoriosIndexRoute
+  '/_authenticated/metas/': typeof AuthenticatedMetasIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -156,6 +166,7 @@ export interface FileRouteTypes {
     | '/estoque/'
     | '/financeiro/'
     | '/relatorios/'
+    | '/metas/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
@@ -170,6 +181,7 @@ export interface FileRouteTypes {
     | '/estoque'
     | '/financeiro'
     | '/relatorios'
+    | '/metas'
   id:
     | '__root__'
     | '/_authenticated'
@@ -185,6 +197,7 @@ export interface FileRouteTypes {
     | '/_authenticated/estoque/'
     | '/_authenticated/financeiro/'
     | '/_authenticated/relatorios/'
+    | '/_authenticated/metas/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -285,6 +298,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedEstoqueIdRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/metas/': {
+      id: '/_authenticated/metas/'
+      path: '/metas'
+      fullPath: '/metas/'
+      preLoaderRoute: typeof AuthenticatedMetasIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
   }
 }
 
@@ -300,6 +320,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedEstoqueIndexRoute: typeof AuthenticatedEstoqueIndexRoute
   AuthenticatedFinanceiroIndexRoute: typeof AuthenticatedFinanceiroIndexRoute
   AuthenticatedRelatoriosIndexRoute: typeof AuthenticatedRelatoriosIndexRoute
+  AuthenticatedMetasIndexRoute: typeof AuthenticatedMetasIndexRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
@@ -314,6 +335,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedEstoqueIndexRoute: AuthenticatedEstoqueIndexRoute,
   AuthenticatedFinanceiroIndexRoute: AuthenticatedFinanceiroIndexRoute,
   AuthenticatedRelatoriosIndexRoute: AuthenticatedRelatoriosIndexRoute,
+  AuthenticatedMetasIndexRoute: AuthenticatedMetasIndexRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
