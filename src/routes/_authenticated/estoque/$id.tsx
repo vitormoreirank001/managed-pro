@@ -18,6 +18,7 @@ import { StatusBadge, statusLabels, type VehicleStatus } from "@/components/app/
 import { fmtBRL, fmtDate } from "@/lib/format";
 import { toast } from "sonner";
 import { ArrowLeft, Plus, Trash2, Car, Upload } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useRef } from "react";
 
 const categorias = [
@@ -122,6 +123,11 @@ function VeiculoDetalhe() {
 
   async function updateVenda(field: string, value: string | null) {
     await supabase.from("vehicles").update({ [field]: value ? Number(value) : null } as any).eq("id", id);
+    qc.invalidateQueries({ queryKey: ["vehicle", id] });
+  }
+
+  async function updateField(field: string, value: string | boolean) {
+    await supabase.from("vehicles").update({ [field]: value } as any).eq("id", id);
     qc.invalidateQueries({ queryKey: ["vehicle", id] });
   }
 
@@ -266,6 +272,24 @@ function VeiculoDetalhe() {
                   />
                 </div>
               )}
+              <div>
+                <Label className="text-xs">Negociação</Label>
+                <Select value={v.tipo_negociacao ?? "proprio"} onValueChange={(val) => updateField("tipo_negociacao", val)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="proprio">Próprio</SelectItem>
+                    <SelectItem value="consignado">Consignado</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center gap-2 pt-1">
+                <Checkbox
+                  id="laudo"
+                  checked={v.laudo_aprovado ?? false}
+                  onCheckedChange={(checked) => updateField("laudo_aprovado", Boolean(checked))}
+                />
+                <Label htmlFor="laudo" className="text-sm cursor-pointer">Laudo aprovado</Label>
+              </div>
             </div>
           </Card>
 

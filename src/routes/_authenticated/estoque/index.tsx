@@ -36,6 +36,7 @@ type Vehicle = {
   status: string; valor_venda: number | null; valor_sugerido: number | null;
   valor_compra: number; valor_preparacao: number; vendido_em: string | null;
   vendedor_id: string | null; created_at: string;
+  laudo_aprovado?: boolean; tipo_negociacao?: string;
   vehicle_images?: { storage_path: string }[];
 };
 
@@ -170,7 +171,7 @@ function EstoqueList() {
       </div>
 
       {/* Status filter (only in grid mode) */}
-      {view === "grid" && view !== "arquivados" && (
+      {view === "grid" && (
         <div className="flex gap-2 flex-wrap mb-4">
           {statuses.map((s) => (
             <Button key={s} size="sm" variant={status === s ? "default" : "outline"} onClick={() => setStatus(s)}>
@@ -215,6 +216,16 @@ function EstoqueList() {
                             <Link to="/estoque/$id" params={{ id: v.id }} className="font-semibold text-sm hover:underline line-clamp-1">{v.modelo}</Link>
                             <p className="text-xs text-muted-foreground">{v.marca ?? ""} {v.ano ?? ""}{v.placa ? ` · ${v.placa}` : ""}</p>
                             <p className="text-sm font-medium mt-1">{fmtBRL(Number(v.valor_venda ?? v.valor_sugerido ?? 0))}</p>
+                            {(v.tipo_negociacao === "consignado" || v.laudo_aprovado) && (
+                              <div className="flex gap-1 mt-1.5 flex-wrap">
+                                {v.tipo_negociacao === "consignado" && (
+                                  <span className="text-xs font-medium px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400">Consignado</span>
+                                )}
+                                {v.laudo_aprovado && (
+                                  <span className="text-xs font-medium px-1.5 py-0.5 rounded bg-green-100 text-green-700 dark:bg-green-950/30 dark:text-green-400">Laudo ✓</span>
+                                )}
+                              </div>
+                            )}
                             <div className="flex gap-1 mt-2">
                               {prev && (
                                 <Button size="sm" variant="outline" className="h-7 px-2 text-xs flex-1" onClick={() => moveStatus(v, prev.key)}>
@@ -267,6 +278,16 @@ function EstoqueList() {
                     <div className="p-4">
                       <p className="font-semibold truncate">{v.modelo}</p>
                       <p className="text-xs text-muted-foreground">{v.marca ?? ""} {v.ano ?? ""} {v.placa ? `· ${v.placa}` : ""}</p>
+                      {(v.tipo_negociacao === "consignado" || v.laudo_aprovado) && (
+                        <div className="flex gap-1 mt-2 flex-wrap">
+                          {v.tipo_negociacao === "consignado" && (
+                            <span className="text-xs font-medium px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400">Consignado</span>
+                          )}
+                          {v.laudo_aprovado && (
+                            <span className="text-xs font-medium px-1.5 py-0.5 rounded bg-green-100 text-green-700 dark:bg-green-950/30 dark:text-green-400">Laudo ✓</span>
+                          )}
+                        </div>
+                      )}
                       <div className="mt-3 flex justify-between text-sm">
                         <span className="text-muted-foreground">Venda</span>
                         <span className="font-medium">{fmtBRL(Number(v.valor_venda ?? v.valor_sugerido ?? 0))}</span>

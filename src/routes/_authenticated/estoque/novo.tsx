@@ -41,6 +41,7 @@ function NovoVeiculo() {
     margem_min: "",
     margem_max: "",
     observacoes: "",
+    tipo_negociacao: "proprio",
   });
 
   // Carrega margem padrão
@@ -90,6 +91,7 @@ function NovoVeiculo() {
           valor_sugerido: m.valorIdealVenda,
           observacoes: form.observacoes || null,
           status: "em_preparacao",
+          tipo_negociacao: form.tipo_negociacao,
           created_by: u.user?.id ?? null,
         })
         .select("id")
@@ -135,6 +137,15 @@ function NovoVeiculo() {
               <Field label="Placa"><Input value={form.placa} onChange={(e) => set("placa", e.target.value.toUpperCase())} /></Field>
               <Field label="Km"><Input type="number" value={form.km} onChange={(e) => set("km", e.target.value)} /></Field>
               <Field label="Cor"><Input value={form.cor} onChange={(e) => set("cor", e.target.value)} /></Field>
+              <Field label="Tipo de negociação">
+                <Select value={form.tipo_negociacao} onValueChange={(v) => set("tipo_negociacao", v)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="proprio">Próprio</SelectItem>
+                    <SelectItem value="consignado">Consignado</SelectItem>
+                  </SelectContent>
+                </Select>
+              </Field>
             </div>
             <div className="mt-4">
               <Field label="Observações"><Textarea value={form.observacoes} onChange={(e) => set("observacoes", e.target.value)} rows={3} /></Field>

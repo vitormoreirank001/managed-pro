@@ -314,6 +314,7 @@ export type Database = {
           created_by: string | null
           id: string
           km: number | null
+          laudo_aprovado: boolean
           marca: string | null
           margem_max: number
           margem_min: number
@@ -323,6 +324,7 @@ export type Database = {
           placa: string | null
           sinal_valor: number | null
           status: Database["public"]["Enums"]["vehicle_status"]
+          tipo_negociacao: string
           updated_at: string
           valor_compra: number
           valor_preparacao: number
@@ -342,6 +344,7 @@ export type Database = {
           created_by?: string | null
           id?: string
           km?: number | null
+          laudo_aprovado?: boolean
           marca?: string | null
           margem_max?: number
           margem_min?: number
@@ -351,6 +354,7 @@ export type Database = {
           placa?: string | null
           sinal_valor?: number | null
           status?: Database["public"]["Enums"]["vehicle_status"]
+          tipo_negociacao?: string
           updated_at?: string
           valor_compra?: number
           valor_preparacao?: number
@@ -370,6 +374,7 @@ export type Database = {
           created_by?: string | null
           id?: string
           km?: number | null
+          laudo_aprovado?: boolean
           marca?: string | null
           margem_max?: number
           margem_min?: number
@@ -379,6 +384,7 @@ export type Database = {
           placa?: string | null
           sinal_valor?: number | null
           status?: Database["public"]["Enums"]["vehicle_status"]
+          tipo_negociacao?: string
           updated_at?: string
           valor_compra?: number
           valor_preparacao?: number
