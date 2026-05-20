@@ -168,6 +168,45 @@ function VeiculoDetalhe() {
 
       <div className="grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
+          {/* Informações editáveis */}
+          <Card className="p-6">
+            <h3 className="font-semibold mb-4">Informações do veículo</h3>
+            <div className="grid sm:grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs">Modelo</Label>
+                <Input key={`modelo-${v.id}`} defaultValue={v.modelo} onBlur={(e) => updateField("modelo", e.target.value)} />
+              </div>
+              <div>
+                <Label className="text-xs">Marca</Label>
+                <Input key={`marca-${v.id}`} defaultValue={v.marca ?? ""} onBlur={(e) => updateField("marca", e.target.value)} />
+              </div>
+              <div>
+                <Label className="text-xs">Versão</Label>
+                <Input key={`versao-info-${v.id}`} defaultValue={(v as any).versao ?? ""} onBlur={(e) => updateField("versao", e.target.value)} placeholder="Ex: LTZ 1.0 Turbo" />
+              </div>
+              <div>
+                <Label className="text-xs">Ano</Label>
+                <Input type="number" key={`ano-${v.id}`} defaultValue={v.ano ?? ""} onBlur={(e) => updateVenda("ano", e.target.value)} />
+              </div>
+              <div>
+                <Label className="text-xs">Placa</Label>
+                <Input key={`placa-${v.id}`} defaultValue={v.placa ?? ""} onBlur={(e) => updateField("placa", e.target.value.toUpperCase())} />
+              </div>
+              <div>
+                <Label className="text-xs">Km</Label>
+                <Input type="number" key={`km-${v.id}`} defaultValue={v.km ?? ""} onBlur={(e) => updateVenda("km", e.target.value)} />
+              </div>
+              <div>
+                <Label className="text-xs">Cor</Label>
+                <Input key={`cor-${v.id}`} defaultValue={v.cor ?? ""} onBlur={(e) => updateField("cor", e.target.value)} />
+              </div>
+              <div>
+                <Label className="text-xs">Data de entrada</Label>
+                <Input type="date" key={`entrada-${v.id}`} defaultValue={(v as any).data_entrada ?? ""} onBlur={(e) => updateField("data_entrada", e.target.value)} />
+              </div>
+            </div>
+          </Card>
+
           <Card className="p-2 overflow-hidden">
             {data?.imgs.length ? (
               <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
@@ -299,7 +338,7 @@ function VeiculoDetalhe() {
                   <SelectContent>
                     <SelectItem value="comprado">Comprado</SelectItem>
                     <SelectItem value="consignado">Consignado</SelectItem>
-                    <SelectItem value="investido">Investido</SelectItem>
+                    <SelectItem value="investidor">Investidor</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

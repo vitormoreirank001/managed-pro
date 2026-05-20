@@ -157,7 +157,7 @@ function NovoVeiculo() {
                   <SelectContent>
                     <SelectItem value="comprado">Comprado</SelectItem>
                     <SelectItem value="consignado">Consignado</SelectItem>
-                    <SelectItem value="investido">Investido</SelectItem>
+                    <SelectItem value="investidor">Investidor</SelectItem>
                   </SelectContent>
                 </Select>
               </Field>
