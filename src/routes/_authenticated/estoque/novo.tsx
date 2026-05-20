@@ -31,6 +31,7 @@ function NovoVeiculo() {
   const [form, setForm] = useState({
     modelo: "",
     marca: "",
+    versao: "",
     ano: "",
     placa: "",
     km: "",
@@ -42,6 +43,7 @@ function NovoVeiculo() {
     margem_max: "",
     observacoes: "",
     tipo_negociacao: "proprio",
+    origem: "comprado",
   });
 
   // Carrega margem padrão
@@ -92,6 +94,8 @@ function NovoVeiculo() {
           observacoes: form.observacoes || null,
           status: "em_preparacao",
           tipo_negociacao: form.tipo_negociacao,
+          versao: form.versao || null,
+          origem: form.origem || null,
           created_by: u.user?.id ?? null,
         })
         .select("id")
@@ -133,6 +137,7 @@ function NovoVeiculo() {
             <div className="grid sm:grid-cols-2 gap-4">
               <Field label="Modelo *"><Input required value={form.modelo} onChange={(e) => set("modelo", e.target.value)} /></Field>
               <Field label="Marca"><Input value={form.marca} onChange={(e) => set("marca", e.target.value)} /></Field>
+              <Field label="Versão"><Input value={form.versao} onChange={(e) => set("versao", e.target.value)} placeholder="Ex: LTZ 1.0 Turbo" /></Field>
               <Field label="Ano"><Input type="number" value={form.ano} onChange={(e) => set("ano", e.target.value)} /></Field>
               <Field label="Placa"><Input value={form.placa} onChange={(e) => set("placa", e.target.value.toUpperCase())} /></Field>
               <Field label="Km"><Input type="number" value={form.km} onChange={(e) => set("km", e.target.value)} /></Field>
@@ -143,6 +148,16 @@ function NovoVeiculo() {
                   <SelectContent>
                     <SelectItem value="proprio">Próprio</SelectItem>
                     <SelectItem value="consignado">Consignado</SelectItem>
+                  </SelectContent>
+                </Select>
+              </Field>
+              <Field label="Origem do veículo">
+                <Select value={form.origem} onValueChange={(v) => set("origem", v)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="comprado">Comprado</SelectItem>
+                    <SelectItem value="consignado">Consignado</SelectItem>
+                    <SelectItem value="investido">Investido</SelectItem>
                   </SelectContent>
                 </Select>
               </Field>

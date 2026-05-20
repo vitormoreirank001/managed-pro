@@ -54,6 +54,12 @@ function Config() {
   const [mtipo, setMtipo] = useState<MarginType>("valor");
   const [mmin, setMmin] = useState("5000");
   const [mmax, setMmax] = useState("10000");
+  const [mPropTipo, setMPropTipo] = useState<MarginType>("percentual");
+  const [mPropMin, setMPropMin] = useState("10");
+  const [mPropMax, setMPropMax] = useState("20");
+  const [mConsTipo, setMConsTipo] = useState<MarginType>("percentual");
+  const [mConsMin, setMConsMin] = useState("5");
+  const [mConsMax, setMConsMax] = useState("15");
   const [syncing, setSyncing] = useState(false);
   const [syncResult, setSyncResult] = useState<{ synced?: number; errors?: number; message?: string } | null>(null);
 
@@ -68,7 +74,17 @@ function Config() {
       if (data) { setNome(data.nome); setLoja(data.loja_nome); }
     });
     supabase.from("settings").select("*").eq("user_id", user.id).maybeSingle().then(({ data }) => {
-      if (data) { setMtipo(data.margem_padrao_tipo); setMmin(String(data.margem_padrao_min)); setMmax(String(data.margem_padrao_max)); }
+      if (data) {
+        setMtipo(data.margem_padrao_tipo);
+        setMmin(String(data.margem_padrao_min));
+        setMmax(String(data.margem_padrao_max));
+        setMPropTipo((data as any).margem_proprio_tipo ?? "percentual");
+        setMPropMin(String((data as any).margem_proprio_min ?? 10));
+        setMPropMax(String((data as any).margem_proprio_max ?? 20));
+        setMConsTipo((data as any).margem_consignado_tipo ?? "percentual");
+        setMConsMin(String((data as any).margem_consignado_min ?? 5));
+        setMConsMax(String((data as any).margem_consignado_max ?? 15));
+      }
     });
   }, [user]);
 
@@ -113,7 +129,13 @@ function Config() {
       margem_padrao_tipo: mtipo,
       margem_padrao_min: Number(mmin),
       margem_padrao_max: Number(mmax),
-    });
+      margem_proprio_tipo: mPropTipo,
+      margem_proprio_min: Number(mPropMin),
+      margem_proprio_max: Number(mPropMax),
+      margem_consignado_tipo: mConsTipo,
+      margem_consignado_min: Number(mConsMin),
+      margem_consignado_max: Number(mConsMax),
+    } as any);
     if (error) return toast.error(error.message);
     toast.success("Configurações salvas");
   }
@@ -171,19 +193,50 @@ function Config() {
         </Card>
 
         {/* Margem */}
-        <Card className="p-6">
-          <h3 className="font-semibold mb-4">Margem padrão</h3>
-          <Tabs value={mtipo} onValueChange={(v) => setMtipo(v as MarginType)}>
-            <TabsList className="grid grid-cols-2 w-full">
-              <TabsTrigger value="valor">Valor (R$)</TabsTrigger>
-              <TabsTrigger value="percentual">Percentual (%)</TabsTrigger>
-            </TabsList>
-          </Tabs>
-          <div className="grid grid-cols-2 gap-3 mt-4">
-            <div><Label>Margem mínima</Label><Input type="number" step="0.01" value={mmin} onChange={(e) => setMmin(e.target.value)} /></div>
-            <div><Label>Margem ideal</Label><Input type="number" step="0.01" value={mmax} onChange={(e) => setMmax(e.target.value)} /></div>
+        <Card className="p-6 lg:col-span-2">
+          <h3 className="font-semibold mb-4">Margens padrão</h3>
+          <div className="grid sm:grid-cols-3 gap-6">
+            <div>
+              <p className="text-sm font-medium mb-3 text-muted-foreground uppercase text-xs tracking-wide">Geral</p>
+              <Tabs value={mtipo} onValueChange={(v) => setMtipo(v as MarginType)}>
+                <TabsList className="grid grid-cols-2 w-full">
+                  <TabsTrigger value="valor">R$</TabsTrigger>
+                  <TabsTrigger value="percentual">%</TabsTrigger>
+                </TabsList>
+              </Tabs>
+              <div className="grid grid-cols-2 gap-2 mt-3">
+                <div><Label className="text-xs">Mínima</Label><Input type="number" step="0.01" value={mmin} onChange={(e) => setMmin(e.target.value)} /></div>
+                <div><Label className="text-xs">Ideal</Label><Input type="number" step="0.01" value={mmax} onChange={(e) => setMmax(e.target.value)} /></div>
+              </div>
+            </div>
+            <div>
+              <p className="text-sm font-medium mb-3 text-muted-foreground uppercase text-xs tracking-wide">Próprio</p>
+              <Tabs value={mPropTipo} onValueChange={(v) => setMPropTipo(v as MarginType)}>
+                <TabsList className="grid grid-cols-2 w-full">
+                  <TabsTrigger value="valor">R$</TabsTrigger>
+                  <TabsTrigger value="percentual">%</TabsTrigger>
+                </TabsList>
+              </Tabs>
+              <div className="grid grid-cols-2 gap-2 mt-3">
+                <div><Label className="text-xs">Mínima</Label><Input type="number" step="0.01" value={mPropMin} onChange={(e) => setMPropMin(e.target.value)} /></div>
+                <div><Label className="text-xs">Ideal</Label><Input type="number" step="0.01" value={mPropMax} onChange={(e) => setMPropMax(e.target.value)} /></div>
+              </div>
+            </div>
+            <div>
+              <p className="text-sm font-medium mb-3 text-muted-foreground uppercase text-xs tracking-wide">Consignado</p>
+              <Tabs value={mConsTipo} onValueChange={(v) => setMConsTipo(v as MarginType)}>
+                <TabsList className="grid grid-cols-2 w-full">
+                  <TabsTrigger value="valor">R$</TabsTrigger>
+                  <TabsTrigger value="percentual">%</TabsTrigger>
+                </TabsList>
+              </Tabs>
+              <div className="grid grid-cols-2 gap-2 mt-3">
+                <div><Label className="text-xs">Mínima</Label><Input type="number" step="0.01" value={mConsMin} onChange={(e) => setMConsMin(e.target.value)} /></div>
+                <div><Label className="text-xs">Ideal</Label><Input type="number" step="0.01" value={mConsMax} onChange={(e) => setMConsMax(e.target.value)} /></div>
+              </div>
+            </div>
           </div>
-          <Button onClick={saveSettings} className="mt-4">Salvar margem padrão</Button>
+          <Button onClick={saveSettings} className="mt-5">Salvar margens</Button>
         </Card>
 
         {/* Autoconf */}

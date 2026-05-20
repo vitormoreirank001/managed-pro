@@ -263,14 +263,20 @@ function VeiculoDetalhe() {
                 <Input type="number" step="0.01" defaultValue={v.sinal_valor ?? ""} onBlur={(e) => updateVenda("sinal_valor", e.target.value)} />
               </div>
               {v.status === "vendido" && (
-                <div>
-                  <Label className="text-xs">Data da venda</Label>
-                  <Input
-                    type="date"
-                    defaultValue={v.vendido_em ?? ""}
-                    onBlur={(e) => updateVendidoEm(e.target.value)}
-                  />
-                </div>
+                <>
+                  <div>
+                    <Label className="text-xs">Data da venda</Label>
+                    <Input type="date" defaultValue={v.vendido_em ?? ""} onBlur={(e) => updateVendidoEm(e.target.value)} />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Estado de venda</Label>
+                    <Input key={`estado-${v.id}`} defaultValue={(v as any).estado_venda ?? ""} onBlur={(e) => updateField("estado_venda", e.target.value)} placeholder="Ex: SP" />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Cidade de venda</Label>
+                    <Input key={`cidade-${v.id}`} defaultValue={(v as any).cidade_venda ?? ""} onBlur={(e) => updateField("cidade_venda", e.target.value)} placeholder="Ex: São Paulo" />
+                  </div>
+                </>
               )}
               <div>
                 <Label className="text-xs">Negociação</Label>
@@ -279,6 +285,32 @@ function VeiculoDetalhe() {
                   <SelectContent>
                     <SelectItem value="proprio">Próprio</SelectItem>
                     <SelectItem value="consignado">Consignado</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-xs">Versão</Label>
+                <Input key={`versao-${v.id}`} defaultValue={(v as any).versao ?? ""} onBlur={(e) => updateField("versao", e.target.value)} placeholder="Ex: LTZ 1.0 Turbo" />
+              </div>
+              <div>
+                <Label className="text-xs">Origem</Label>
+                <Select value={(v as any).origem ?? "comprado"} onValueChange={(val) => updateField("origem", val)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="comprado">Comprado</SelectItem>
+                    <SelectItem value="consignado">Consignado</SelectItem>
+                    <SelectItem value="investido">Investido</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-xs">Classificação de margem</Label>
+                <Select value={(v as any).classificacao_margem ?? ""} onValueChange={(val) => updateField("classificacao_margem", val)}>
+                  <SelectTrigger><SelectValue placeholder="Não definido" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="acima">Acima da margem</SelectItem>
+                    <SelectItem value="na">Na margem</SelectItem>
+                    <SelectItem value="abaixo">Abaixo da margem</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

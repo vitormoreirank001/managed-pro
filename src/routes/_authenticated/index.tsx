@@ -8,7 +8,7 @@ import { StatCard } from "@/components/app/StatCard";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Car, Wrench, CircleDollarSign, Handshake, TrendingUp, TrendingDown, Trophy, Plus } from "lucide-react";
+import { Car, Wrench, CircleDollarSign, Handshake, TrendingUp, TrendingDown, Trophy, Plus, BarChart2 } from "lucide-react";
 import { fmtBRL, fmtInt } from "@/lib/format";
 import { StatusBadge } from "@/components/app/StatusBadge";
 
@@ -98,6 +98,15 @@ function Dashboard() {
   const topFat = [...byVendedor.entries()].sort((a, b) => b[1].valor - a[1].valor)[0];
 
   const recentes = [...v].filter((x) => x.status !== "arquivado").sort((a, b) => +new Date(b.created_at) - +new Date(a.created_at)).slice(0, 5);
+
+  function topN(items: any[], keyFn: (x: any) => string, n: number) {
+    const map = new Map<string, number>();
+    items.forEach((x) => { const k = keyFn(x); if (k) map.set(k, (map.get(k) ?? 0) + 1); });
+    return [...map.entries()].sort((a, b) => b[1] - a[1]).slice(0, n);
+  }
+  const topModelos = topN(vendidosMes, (x) => x.modelo, 3);
+  const topMarcas = topN(vendidosMes, (x) => x.marca ?? "", 3);
+  const topVersoes = topN(vendidosMes, (x) => (x as any).versao ?? "", 3);
 
   const meta = data?.meta;
   const tierVendas = meta ? getTier(vendidosMes.length, meta.ouro_vendas, meta.prata_vendas, meta.bronze_vendas) : null;
@@ -219,6 +228,63 @@ function Dashboard() {
           <Link to="/metas" className="text-sm text-primary hover:underline flex items-center gap-1">
             <Trophy className="h-4 w-4" /> Configurar metas para {mesLabel}
           </Link>
+        </div>
+      )}
+
+      {/* Mais Vendidos */}
+      {vendidosMes.length > 0 && (
+        <div className="mt-6">
+          <h3 className="font-semibold flex items-center gap-2 mb-3"><BarChart2 className="h-4 w-4 text-primary" /> Mais vendidos — {mesLabel}</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <Card className="p-5">
+              <p className="text-xs text-muted-foreground uppercase tracking-wide mb-3">Modelos</p>
+              {topModelos.length === 0 ? <p className="text-sm text-muted-foreground">—</p> :
+                <ol className="space-y-2">
+                  {topModelos.map(([nome, qtd], i) => (
+                    <li key={nome} className="flex items-center justify-between text-sm">
+                      <span className="flex items-center gap-2">
+                        <span className="text-xs text-muted-foreground w-4">{i + 1}º</span>
+                        <span className="font-medium truncate max-w-[140px]">{nome}</span>
+                      </span>
+                      <span className="text-muted-foreground">{qtd} vnd</span>
+                    </li>
+                  ))}
+                </ol>
+              }
+            </Card>
+            <Card className="p-5">
+              <p className="text-xs text-muted-foreground uppercase tracking-wide mb-3">Marcas</p>
+              {topMarcas.length === 0 ? <p className="text-sm text-muted-foreground">—</p> :
+                <ol className="space-y-2">
+                  {topMarcas.map(([nome, qtd], i) => (
+                    <li key={nome} className="flex items-center justify-between text-sm">
+                      <span className="flex items-center gap-2">
+                        <span className="text-xs text-muted-foreground w-4">{i + 1}º</span>
+                        <span className="font-medium">{nome}</span>
+                      </span>
+                      <span className="text-muted-foreground">{qtd} vnd</span>
+                    </li>
+                  ))}
+                </ol>
+              }
+            </Card>
+            <Card className="p-5">
+              <p className="text-xs text-muted-foreground uppercase tracking-wide mb-3">Versões</p>
+              {topVersoes.length === 0 ? <p className="text-sm text-muted-foreground">Nenhuma versão cadastrada</p> :
+                <ol className="space-y-2">
+                  {topVersoes.map(([nome, qtd], i) => (
+                    <li key={nome} className="flex items-center justify-between text-sm">
+                      <span className="flex items-center gap-2">
+                        <span className="text-xs text-muted-foreground w-4">{i + 1}º</span>
+                        <span className="font-medium truncate max-w-[140px]">{nome}</span>
+                      </span>
+                      <span className="text-muted-foreground">{qtd} vnd</span>
+                    </li>
+                  ))}
+                </ol>
+              }
+            </Card>
+          </div>
         </div>
       )}
 

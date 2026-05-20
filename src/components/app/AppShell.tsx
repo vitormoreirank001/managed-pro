@@ -14,6 +14,7 @@ import {
   Moon,
   LogOut,
   Menu,
+  ArrowLeftRight,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -31,6 +32,7 @@ const nav: NavItem[] = [
   { to: "/financeiro/despesas", label: "Despesas", icon: Receipt, section: "Financeiro" },
   { to: "/financeiro/dre", label: "DRE", icon: PieChart, section: "Financeiro" },
   { to: "/financeiro/margem", label: "Controle de Margem", icon: Target, section: "Financeiro" },
+  { to: "/financeiro/por-tipo", label: "Por Tipo", icon: ArrowLeftRight, section: "Financeiro" },
   { to: "/metas", label: "Metas", icon: Trophy, section: "Gestão" },
   { to: "/colaboradores", label: "Colaboradores", icon: Users, section: "Gestão" },
   { to: "/relatorios", label: "Relatórios", icon: FileBarChart2, section: "Gestão" },
