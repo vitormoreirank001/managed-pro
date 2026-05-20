@@ -26,12 +26,13 @@ const fmtK = (v: number) => Math.abs(v) >= 1000 ? `R$${(v / 1000).toFixed(0)}k` 
 function calcStats(vehicles: any[], ini: string, fim: string) {
   const vendidos = vehicles.filter((x) => x.vendido_em && x.vendido_em >= ini && x.vendido_em <= fim);
   const faturamento = vendidos.reduce((s, x) => s + Number(x.valor_venda ?? 0), 0);
-  const despVehicle = vendidos.reduce((s, x) => {
+  const custoAquisicao = vendidos.reduce((s, x) => s + Number(x.valor_compra), 0);
+  const despesas = vendidos.reduce((s, x) => {
     const ve = ((x as any).vehicle_expenses ?? []).reduce((vs: number, e: any) => vs + Number(e.valor), 0);
-    return s + Number(x.valor_compra) + Number(x.valor_preparacao) + ve;
+    return s + Number(x.valor_preparacao) + ve;
   }, 0);
-  const lucro = faturamento - despVehicle;
-  return { qtd: vendidos.length, faturamento, despesas: despVehicle, lucro };
+  const lucro = faturamento - custoAquisicao - despesas;
+  return { qtd: vendidos.length, faturamento, despesas, lucro };
 }
 
 function PorTipo() {

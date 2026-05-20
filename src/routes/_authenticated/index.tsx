@@ -104,7 +104,7 @@ function Dashboard() {
   const vendidosMes = v.filter((x) => x.status === "vendido" && x.vendido_em && x.vendido_em >= ini && x.vendido_em <= fim);
   const faturamento = vendidosMes.reduce((s, x) => s + Number(x.valor_venda ?? 0), 0);
   const custo = vendidosMes.reduce((s, x) => s + Number(x.valor_compra) + Number(x.valor_preparacao), 0);
-  const lucro = faturamento - custo - expSum;
+  const lucro = faturamento - custo;
 
   const mesNum = String(month).padStart(2, "0");
   const lastDay = new Date(year, month, 0).getDate();
@@ -126,7 +126,7 @@ function Dashboard() {
     const fat  = vMes.reduce((s, x) => s + Number(x.valor_venda ?? 0), 0);
     const cst  = vMes.reduce((s, x) => s + Number(x.valor_compra) + Number(x.valor_preparacao), 0);
     const desp = allExpenses.filter((e) => e.data >= mIni && e.data <= mFim).reduce((s, e) => s + Number(e.valor), 0);
-    return { mes, Faturamento: fat, Lucro: fat - cst - desp, Despesas: desp };
+    return { mes, Faturamento: fat, "Lucro bruto": fat - cst, Despesas: desp };
   });
 
   const byVendedor = new Map<string, { count: number; valor: number }>();
@@ -205,7 +205,7 @@ function Dashboard() {
           <StatCard label={`Faturamento — ${mesLabel}`} value={fmtBRL(faturamento)} icon={TrendingUp} tone="success" hint={`${vendidosMes.length} veículos vendidos`} className={cardCls} />
         </CardLink>
         <CardLink to="/financeiro">
-          <StatCard label="Lucro estimado" value={fmtBRL(lucro)} icon={TrendingUp} tone="primary" hint="Receita − custo − despesas" className={cardCls} />
+          <StatCard label="Lucro estimado" value={fmtBRL(lucro)} icon={TrendingUp} tone="primary" hint="Faturamento − custo de aquisição" className={cardCls} />
         </CardLink>
         <CardLink to="/financeiro/despesas">
           <StatCard label={`Despesas — ${mesLabel}`} value={fmtBRL(expSum)} icon={TrendingDown} tone="destructive" hint="Despesas gerais do mês" className={cardCls} />
@@ -238,7 +238,7 @@ function Dashboard() {
                 <XAxis dataKey="mes" tick={{ fontSize: 10 }} />
                 <YAxis tickFormatter={fmtK} tick={{ fontSize: 10 }} width={44} />
                 <Tooltip formatter={(v: number) => fmtBRL(v)} />
-                <Line type="monotone" dataKey="Lucro" stroke="#22c55e" strokeWidth={2} dot={{ r: 3 }} />
+                <Line type="monotone" dataKey="Lucro bruto" stroke="#22c55e" strokeWidth={2} dot={{ r: 3 }} />
               </LineChart>
             </ResponsiveContainer>
           </Card>
