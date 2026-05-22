@@ -11,9 +11,11 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/lib/auth";
+import { useIsMarketing } from "@/lib/role";
 import { useTheme } from "@/lib/theme";
 import { toast } from "sonner";
-import { Sun, Moon, RefreshCw, Plus, ShieldCheck, ShieldOff, Users } from "lucide-react";
+import { Sun, Moon, RefreshCw, Plus, ShieldCheck, ShieldOff, Users, Upload } from "lucide-react";
+import { useRef } from "react";
 import type { MarginType } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/configuracoes/")({
@@ -45,8 +47,12 @@ const roleCls: Record<string, string> = {
 
 function Config() {
   const { user } = useAuth();
+  const isMarketing = useIsMarketing();
   const { theme, toggle } = useTheme();
   const qc = useQueryClient();
+  const logoRef = useRef<HTMLInputElement>(null);
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
 
   // Profile / settings
   const [loja, setLoja] = useState("");
@@ -70,8 +76,8 @@ function Config() {
 
   useEffect(() => {
     if (!user) return;
-    supabase.from("profiles").select("nome, loja_nome").eq("id", user.id).maybeSingle().then(({ data }) => {
-      if (data) { setNome(data.nome); setLoja(data.loja_nome); }
+    supabase.from("profiles").select("nome, loja_nome, logo_url").eq("id", user.id).maybeSingle().then(({ data }) => {
+      if (data) { setNome(data.nome); setLoja(data.loja_nome); setLogoUrl((data as any).logo_url ?? null); }
     });
     supabase.from("settings").select("*").eq("user_id", user.id).maybeSingle().then(({ data }) => {
       if (data) {
@@ -164,6 +170,22 @@ function Config() {
     qc.invalidateQueries({ queryKey: ["admin-users"] });
   }
 
+  async function uploadLogo(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingLogo(true);
+    const path = `logos/${user!.id}/${Date.now()}-${file.name}`;
+    const { error } = await supabase.storage.from("vehicle-images").upload(path, file, { upsert: true });
+    if (error) { toast.error(error.message); setUploadingLogo(false); return; }
+    const { data: pub } = supabase.storage.from("vehicle-images").getPublicUrl(path);
+    const url = pub.publicUrl;
+    await supabase.from("profiles").update({ logo_url: url } as any).eq("id", user!.id);
+    setLogoUrl(url);
+    toast.success("Logo atualizada");
+    setUploadingLogo(false);
+    if (logoRef.current) logoRef.current.value = "";
+  }
+
   async function updateRole(u: UserEntry, role: string) {
     const { data, error } = await supabase.functions.invoke("admin-users", {
       body: { action: "update-role", userId: u.id, role: role === "none" ? null : role },
@@ -171,6 +193,17 @@ function Config() {
     if (error || data?.error) { toast.error(data?.error ?? error?.message); return; }
     toast.success("Permissão atualizada");
     qc.invalidateQueries({ queryKey: ["admin-users"] });
+  }
+
+  if (isMarketing) {
+    return (
+      <>
+        <PageHeader title="Configurações" subtitle="Personalize a plataforma" />
+        <Card className="p-8 text-center text-muted-foreground">
+          Acesso restrito. Contate o administrador para alterar configurações.
+        </Card>
+      </>
+    );
   }
 
   return (
@@ -182,6 +215,21 @@ function Config() {
         <Card className="p-6">
           <h3 className="font-semibold mb-4">Identidade da loja</h3>
           <div className="space-y-3">
+            <div>
+              <Label>Logo da loja</Label>
+              <div className="flex items-center gap-3 mt-1">
+                {logoUrl ? (
+                  <img src={logoUrl} alt="Logo" className="h-12 w-12 rounded-xl object-cover border border-border" />
+                ) : (
+                  <div className="h-12 w-12 rounded-xl bg-primary text-primary-foreground grid place-items-center font-bold text-lg">M</div>
+                )}
+                <input ref={logoRef} type="file" accept="image/*" className="hidden" onChange={uploadLogo} />
+                <Button variant="outline" size="sm" disabled={uploadingLogo} onClick={() => logoRef.current?.click()}>
+                  <Upload className="h-4 w-4 mr-2" />{uploadingLogo ? "Enviando..." : "Alterar logo"}
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">Aparece na barra lateral. Recomendado: quadrado, mín. 80×80px.</p>
+            </div>
             <div><Label>Seu nome</Label><Input value={nome} onChange={(e) => setNome(e.target.value)} /></div>
             <div>
               <Label>Nome da loja</Label>

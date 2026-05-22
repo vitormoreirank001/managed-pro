@@ -19,6 +19,7 @@ import {
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
+import { useIsMarketing } from "@/lib/role";
 import { useTheme } from "@/lib/theme";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -42,21 +43,28 @@ const nav: NavItem[] = [
 export function AppShell() {
   const { user, signOut } = useAuth();
   const { theme, toggle } = useTheme();
+  const isMarketing = useIsMarketing();
   const path = useRouterState({ select: (s) => s.location.pathname });
   const [open, setOpen] = useState(false);
   const [lojaNome, setLojaNome] = useState("Minha Loja");
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
     supabase
       .from("profiles")
-      .select("loja_nome")
+      .select("loja_nome, logo_url")
       .eq("id", user.id)
       .maybeSingle()
-      .then(({ data }) => data?.loja_nome && setLojaNome(data.loja_nome));
+      .then(({ data }) => {
+        if (data?.loja_nome) setLojaNome(data.loja_nome);
+        if ((data as any)?.logo_url) setLogoUrl((data as any).logo_url);
+      });
   }, [user]);
 
-  const sections = Array.from(new Set(nav.map((n) => n.section!)));
+  const hiddenForMarketing = new Set(["/configuracoes", "/financeiro/despesas"]);
+  const visibleNav = isMarketing ? nav.filter((n) => !hiddenForMarketing.has(n.to)) : nav;
+  const sections = Array.from(new Set(visibleNav.map((n) => n.section!)));
 
   return (
     <div className="flex min-h-screen w-full bg-background text-foreground">
@@ -68,9 +76,13 @@ export function AppShell() {
         )}
       >
         <div className="h-16 flex items-center gap-2 px-5 border-b border-sidebar-border">
-          <div className="h-9 w-9 rounded-xl bg-primary text-primary-foreground grid place-items-center font-bold">
-            M
-          </div>
+          {logoUrl ? (
+            <img src={logoUrl} alt="Logo" className="h-9 w-9 rounded-xl object-cover flex-shrink-0" />
+          ) : (
+            <div className="h-9 w-9 rounded-xl bg-primary text-primary-foreground grid place-items-center font-bold flex-shrink-0">
+              M
+            </div>
+          )}
           <div className="leading-tight">
             <p className="text-xs text-muted-foreground">Managed</p>
             <p className="text-sm font-semibold truncate max-w-[140px]">{lojaNome}</p>
@@ -83,7 +95,7 @@ export function AppShell() {
                 {sec}
               </p>
               <ul className="space-y-1">
-                {nav
+                {visibleNav
                   .filter((n) => n.section === sec)
                   .map((n) => {
                     const active = n.to === "/" ? path === "/" : path === n.to || path.startsWith(n.to + "/");

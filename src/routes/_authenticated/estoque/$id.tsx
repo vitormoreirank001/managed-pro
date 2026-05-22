@@ -20,6 +20,7 @@ import { toast } from "sonner";
 import { ArrowLeft, Plus, Trash2, Car, Upload } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useRef } from "react";
+import { useIsMarketing } from "@/lib/role";
 
 const categorias = [
   "doc_compra", "manutencao", "frete_venda", "comissao_venda", "doc_venda",
@@ -48,6 +49,7 @@ function VeiculoDetalhe() {
   const { id } = Route.useParams();
   const qc = useQueryClient();
   const navigate = useNavigate();
+  const isMarketing = useIsMarketing();
 
   const { data } = useQuery({
     queryKey: ["vehicle", id],
@@ -239,17 +241,19 @@ function VeiculoDetalhe() {
               <h3 className="font-semibold">Despesas do veículo</h3>
               <span className="text-sm text-muted-foreground">Total: <span className="font-semibold text-foreground">{fmtBRL(totalDesp)}</span></span>
             </div>
-            <form onSubmit={addDesp} className="mt-4 grid grid-cols-1 md:grid-cols-[160px_1fr_140px_auto] gap-2">
-              <Select value={novaDesp.categoria} onValueChange={(v) => setNovaDesp((p) => ({ ...p, categoria: v as (typeof categorias)[number] }))}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {categorias.map((c) => <SelectItem key={c} value={c}>{catLabel[c]}</SelectItem>)}
-                </SelectContent>
-              </Select>
-              <Input placeholder="Descrição" value={novaDesp.descricao} onChange={(e) => setNovaDesp((p) => ({ ...p, descricao: e.target.value }))} />
-              <Input type="number" step="0.01" placeholder="Valor" value={novaDesp.valor} onChange={(e) => setNovaDesp((p) => ({ ...p, valor: e.target.value }))} />
-              <Button type="submit"><Plus className="h-4 w-4" /></Button>
-            </form>
+            {!isMarketing && (
+              <form onSubmit={addDesp} className="mt-4 grid grid-cols-1 md:grid-cols-[160px_1fr_140px_auto] gap-2">
+                <Select value={novaDesp.categoria} onValueChange={(v) => setNovaDesp((p) => ({ ...p, categoria: v as (typeof categorias)[number] }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {categorias.map((c) => <SelectItem key={c} value={c}>{catLabel[c]}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                <Input placeholder="Descrição" value={novaDesp.descricao} onChange={(e) => setNovaDesp((p) => ({ ...p, descricao: e.target.value }))} />
+                <Input type="number" step="0.01" placeholder="Valor" value={novaDesp.valor} onChange={(e) => setNovaDesp((p) => ({ ...p, valor: e.target.value }))} />
+                <Button type="submit"><Plus className="h-4 w-4" /></Button>
+              </form>
+            )}
             <div className="mt-4 divide-y divide-border">
               {desp.length === 0 && <p className="text-sm text-muted-foreground py-4">Nenhuma despesa registrada.</p>}
               {desp.map((d) => (
@@ -260,7 +264,9 @@ function VeiculoDetalhe() {
                   </div>
                   <div className="flex items-center gap-3">
                     <span className="font-medium">{fmtBRL(Number(d.valor))}</span>
-                    <Button size="icon" variant="ghost" onClick={() => removeDesp(d.id)}><Trash2 className="h-4 w-4" /></Button>
+                    {!isMarketing && (
+                      <Button size="icon" variant="ghost" onClick={() => removeDesp(d.id)}><Trash2 className="h-4 w-4" /></Button>
+                    )}
                   </div>
                 </div>
               ))}
@@ -292,6 +298,10 @@ function VeiculoDetalhe() {
                     {data?.vendedores.map((c) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}
                   </SelectContent>
                 </Select>
+              </div>
+              <div>
+                <Label className="text-xs">Valor de compra</Label>
+                <Input type="number" step="0.01" key={`compra-${v.id}`} defaultValue={v.valor_compra ?? ""} onBlur={(e) => updateVenda("valor_compra", e.target.value)} />
               </div>
               <div>
                 <Label className="text-xs">Valor de venda</Label>
@@ -360,6 +370,14 @@ function VeiculoDetalhe() {
                   onCheckedChange={(checked) => updateField("laudo_aprovado", Boolean(checked))}
                 />
                 <Label htmlFor="laudo" className="text-sm cursor-pointer">Laudo aprovado</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="no_patio"
+                  checked={(v as any).no_patio ?? false}
+                  onCheckedChange={(checked) => updateField("no_patio", Boolean(checked))}
+                />
+                <Label htmlFor="no_patio" className="text-sm cursor-pointer">No pátio</Label>
               </div>
             </div>
           </Card>

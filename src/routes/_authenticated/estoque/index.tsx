@@ -10,8 +10,9 @@ import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { StatusBadge, statusLabels, type VehicleStatus } from "@/components/app/StatusBadge";
-import { Plus, Search, Car, X, LayoutGrid, Kanban, ArrowRight, ArrowLeft, Archive } from "lucide-react";
+import { Plus, Search, Car, X, LayoutGrid, Kanban, ArrowRight, ArrowLeft, Archive, ParkingSquare } from "lucide-react";
 import { fmtBRL } from "@/lib/format";
+import { useIsMarketing } from "@/lib/role";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/estoque/")({
@@ -48,6 +49,7 @@ function imgUrl(v: Vehicle) {
 
 function EstoqueList() {
   const qc = useQueryClient();
+  const isMarketing = useIsMarketing();
   const { status: searchStatus, dateFrom: searchDateFrom, dateTo: searchDateTo } = Route.useSearch();
   const [q, setQ] = useState("");
   const [status, setStatus] = useState<"todos" | VehicleStatus>(searchStatus ?? "todos");
@@ -76,6 +78,7 @@ function EstoqueList() {
 
   const arquivados = vehicles.filter((v) => v.status === "arquivado");
   const ativos = vehicles.filter((v) => v.status !== "arquivado");
+  const noPatioCount = ativos.filter((v) => (v as any).no_patio).length;
 
   const hasDateFilter = dateFrom || dateTo;
   const filtered = ativos.filter((v) => {
@@ -146,12 +149,24 @@ function EstoqueList() {
               <Archive className="h-4 w-4 mr-1" /> Arquivados
               {arquivados.length > 0 && <span className="ml-1 bg-muted-foreground/20 rounded-full px-1.5 text-xs">{arquivados.length}</span>}
             </Button>
-            <Button asChild>
-              <Link to="/estoque/novo"><Plus className="h-4 w-4 mr-2" />Novo veículo</Link>
-            </Button>
+            {!isMarketing && (
+              <Button asChild>
+                <Link to="/estoque/novo"><Plus className="h-4 w-4 mr-2" />Novo veículo</Link>
+              </Button>
+            )}
           </div>
         }
       />
+
+      {/* Pátio counter */}
+      {noPatioCount > 0 && (
+        <div className="flex items-center gap-2 mb-3">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/10 text-primary text-sm font-medium border border-primary/20">
+            <ParkingSquare className="h-4 w-4" />
+            {noPatioCount} {noPatioCount === 1 ? "carro" : "carros"} no pátio
+          </span>
+        </div>
+      )}
 
       {/* Filters */}
       <div className="flex flex-wrap gap-3 mb-3">
