@@ -13,11 +13,18 @@ import { fmtBRL, fmtInt } from "@/lib/format";
 import { StatusBadge } from "@/components/app/StatusBadge";
 import {
   BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip,
-  ResponsiveContainer, CartesianGrid, Legend,
+  ResponsiveContainer, CartesianGrid, Legend, Cell,
 } from "recharts";
 
 const MESES = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
 const MESES_SHORT = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
+
+const VE_CAT_LABEL: Record<string, string> = {
+  comissao_venda: "Comissão", comissao: "Comissão",
+  manutencao: "Manutenção", doc_compra: "Doc Compra",
+  outras: "Outras", imposto: "Imposto", frete: "Frete",
+};
+const VE_COLORS = ["#f97316","#3b82f6","#22c55e","#ef4444","#a855f7","#6b7280"];
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({ meta: [{ title: "Painel — Managed" }] }),
@@ -90,6 +97,29 @@ function Dashboard() {
       return { vehicles: vehicles ?? [], expenses: expenses ?? [], collabs: collabs ?? [], meta: meta ?? null };
     },
   });
+
+  const { data: veExp } = useQuery({
+    queryKey: ["ve-chart", year, month],
+    enabled: !!user,
+    queryFn: async () => {
+      const end = new Date(year, month, 0);
+      const i = `${year}-${String(month).padStart(2, "0")}-01`;
+      const f = end.toISOString().slice(0, 10);
+      const { data: vehs } = await supabase.from("vehicles").select("id").eq("status", "vendido").gte("vendido_em", i).lte("vendido_em", f);
+      if (!vehs?.length) return [];
+      const { data: exps } = await supabase.from("vehicle_expenses").select("categoria, valor").in("vehicle_id", vehs.map(v => v.id));
+      return exps ?? [];
+    },
+  });
+
+  const veChartData = useMemo(() => {
+    const acc: Record<string, number> = {};
+    for (const e of veExp ?? []) {
+      const label = VE_CAT_LABEL[e.categoria] ?? e.categoria;
+      acc[label] = (acc[label] ?? 0) + Number(e.valor);
+    }
+    return Object.entries(acc).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
+  }, [veExp]);
 
   const v = data?.vehicles ?? [];
   const allExpenses = data?.expenses ?? [];
@@ -243,16 +273,21 @@ function Dashboard() {
             </ResponsiveContainer>
           </Card>
           <Card className="p-4">
-            <p className="text-xs text-muted-foreground uppercase tracking-wide mb-3">Despesas</p>
-            <ResponsiveContainer width="100%" height={160}>
-              <BarChart data={chartData} margin={{ top: 2, right: 4, left: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                <XAxis dataKey="mes" tick={{ fontSize: 10 }} />
-                <YAxis tickFormatter={fmtK} tick={{ fontSize: 10 }} width={44} />
-                <Tooltip formatter={(v: number) => fmtBRL(v)} />
-                <Bar dataKey="Despesas" fill="#ef4444" radius={[3,3,0,0]} />
-              </BarChart>
-            </ResponsiveContainer>
+            <p className="text-xs text-muted-foreground uppercase tracking-wide mb-3">Despesas por veículo — {mesLabel}</p>
+            {veChartData.length === 0 ? (
+              <p className="text-xs text-muted-foreground py-10 text-center">Sem despesas de veículos</p>
+            ) : (
+              <ResponsiveContainer width="100%" height={160}>
+                <BarChart data={veChartData} layout="vertical" margin={{ top: 0, right: 30, left: 0, bottom: 0 }}>
+                  <XAxis type="number" tickFormatter={fmtK} tick={{ fontSize: 10 }} />
+                  <YAxis type="category" dataKey="name" width={82} tick={{ fontSize: 10 }} />
+                  <Tooltip formatter={(v: number) => [fmtBRL(v), "Total"]} />
+                  <Bar dataKey="value" radius={[0, 3, 3, 0]}>
+                    {veChartData.map((_, i) => <Cell key={i} fill={VE_COLORS[i % VE_COLORS.length]} />)}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            )}
           </Card>
         </div>
       </div>
