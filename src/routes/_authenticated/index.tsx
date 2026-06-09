@@ -121,11 +121,10 @@ function Dashboard() {
     return Object.entries(acc).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
   }, [veExp]);
 
+  const veTotalMes = veChartData.reduce((s, e) => s + e.value, 0);
+
   const v = data?.vehicles ?? [];
   const allExpenses = data?.expenses ?? [];
-
-  // Expenses do mês selecionado (para stat card)
-  const expSum = allExpenses.filter((e) => e.data >= ini && e.data <= fim).reduce((s, e) => s + Number(e.valor), 0);
 
   const emEstoque = v.filter((x) => x.status === "pronto_venda").length;
   const emPrep = v.filter((x) => x.status === "em_preparacao").length;
@@ -238,7 +237,7 @@ function Dashboard() {
           <StatCard label="Lucro estimado" value={fmtBRL(lucro)} icon={TrendingUp} tone="primary" hint="Faturamento − custo de aquisição" className={cardCls} />
         </CardLink>
         <CardLink to="/financeiro/despesas">
-          <StatCard label={`Despesas — ${mesLabel}`} value={fmtBRL(expSum)} icon={TrendingDown} tone="destructive" hint="Despesas gerais do mês" className={cardCls} />
+          <StatCard label={`Despesas veículos — ${mesLabel}`} value={fmtBRL(veTotalMes)} icon={TrendingDown} tone="destructive" hint="Comissão, manutenção, documentação..." className={cardCls} />
         </CardLink>
       </div>
 
