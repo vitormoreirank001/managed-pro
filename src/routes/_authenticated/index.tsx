@@ -133,7 +133,7 @@ function Dashboard() {
   const vendidosMes = v.filter((x) => x.status === "vendido" && x.vendido_em && x.vendido_em >= ini && x.vendido_em <= fim);
   const faturamento = vendidosMes.reduce((s, x) => s + Number(x.valor_venda ?? 0), 0);
   const custo = vendidosMes.reduce((s, x) => s + Number(x.valor_compra) + Number(x.valor_preparacao), 0);
-  const lucro = faturamento - custo;
+  const lucro = faturamento - custo - veTotalMes;
 
   const mesNum = String(month).padStart(2, "0");
   const lastDay = new Date(year, month, 0).getDate();
@@ -234,7 +234,7 @@ function Dashboard() {
           <StatCard label={`Faturamento — ${mesLabel}`} value={fmtBRL(faturamento)} icon={TrendingUp} tone="success" hint={`${vendidosMes.length} veículos vendidos`} className={cardCls} />
         </CardLink>
         <CardLink to="/financeiro">
-          <StatCard label="Lucro estimado" value={fmtBRL(lucro)} icon={TrendingUp} tone="primary" hint="Faturamento − custo de aquisição" className={cardCls} />
+          <StatCard label="Lucro estimado" value={fmtBRL(lucro)} icon={TrendingUp} tone="primary" hint="Faturamento − custo − despesas veículo" className={cardCls} />
         </CardLink>
         <CardLink to="/financeiro/despesas">
           <StatCard label={`Despesas veículos — ${mesLabel}`} value={fmtBRL(veTotalMes)} icon={TrendingDown} tone="destructive" hint="Comissão, manutenção, documentação..." className={cardCls} />

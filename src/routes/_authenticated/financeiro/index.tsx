@@ -41,14 +41,20 @@ function Financeiro() {
         supabase.from("expenses").select("*").gte("data", ini).lte("data", fim),
         supabase.from("vehicles").select("valor_sugerido, valor_compra, valor_preparacao").eq("status", "pronto_venda"),
       ]);
-      return { vend: vend.data ?? [], exp: exp.data ?? [], estoque: estoque.data ?? [] };
+      const vendIds = (vend.data ?? []).map((v) => v.id);
+      let veExp: { valor: number | string }[] = [];
+      if (vendIds.length > 0) {
+        const { data: ve } = await supabase.from("vehicle_expenses").select("valor").in("vehicle_id", vendIds);
+        veExp = ve ?? [];
+      }
+      return { vend: vend.data ?? [], exp: exp.data ?? [], estoque: estoque.data ?? [], veExp };
     },
   });
 
   const fat = (data?.vend ?? []).reduce((s, v) => s + Number(v.valor_venda ?? 0), 0);
   const custo = (data?.vend ?? []).reduce((s, v) => s + Number(v.valor_compra) + Number(v.valor_preparacao), 0);
-  const desp = (data?.exp ?? []).reduce((s, e) => s + Number(e.valor), 0);
-  const lucro = fat - custo - desp;
+  const veDesp = (data?.veExp ?? []).reduce((s, e) => s + Number(e.valor), 0);
+  const lucro = fat - custo - veDesp;
   const projetado = (data?.estoque ?? []).reduce((s, v) => s + Number(v.valor_sugerido ?? 0), 0);
   const lucroProj = (data?.estoque ?? []).reduce((s, v) => s + Number(v.valor_sugerido ?? 0) - Number(v.valor_compra) - Number(v.valor_preparacao), 0);
 
@@ -91,7 +97,7 @@ function Financeiro() {
           <StatCard label={`Lucro — ${MESES[month - 1]}`} value={fmtBRL(lucro)} icon={Wallet} tone={lucro >= 0 ? "success" : "destructive"} className={cardCls} />
         </Link>
         <Link to="/financeiro/despesas" className="block">
-          <StatCard label="Despesas do mês" value={fmtBRL(desp)} icon={TrendingDown} tone="destructive" className={cardCls} />
+          <StatCard label="Despesas veículos" value={fmtBRL(veDesp)} icon={TrendingDown} tone="destructive" className={cardCls} />
         </Link>
       </div>
       <Card className="p-6 mt-6">
@@ -106,6 +112,11 @@ function Financeiro() {
             <p className="text-xs text-muted-foreground uppercase tracking-wider">Lucro projetado</p>
             <p className={`text-3xl font-semibold mt-1 ${lucroProj >= 0 ? "text-success" : "text-destructive"}`}>{fmtBRL(lucro + lucroProj)}</p>
             <p className="text-sm text-muted-foreground mt-1">Lucro atual + margem do estoque</p>
+            {(lucro + lucroProj) < 0 && (
+              <p className="mt-2 text-xs font-medium text-destructive bg-destructive/10 rounded px-2 py-1">
+                Atenção: projeção negativa. Revise despesas ou preços do estoque.
+              </p>
+            )}
           </div>
         </div>
         <div className="mt-4 flex flex-wrap gap-2">
